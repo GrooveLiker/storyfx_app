@@ -1,0 +1,9 @@
+prototype/.venv/
+prototype/models/
+prototype/sounds/ambience/*.wav
+prototype/sounds/sfx/*.wav
+prototype/tests/wav/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/

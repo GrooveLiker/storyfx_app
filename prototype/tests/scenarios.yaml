@@ -1,0 +1,45 @@
+# Сценарии сквозной проверки. Каждый озвучивается Windows TTS (tools/make_test_wavs.py)
+# и прогоняется через Vosk → движок. Также прогоняются как текст (без Vosk).
+# expect — события, которые обязаны появиться; forbid — которые не должны.
+
+forest_dnd:
+  mode: dnd
+  text: >
+    Отряд вошёл в густой лес. Где-то вдалеке завыл волк.
+    Воин выхватил меч и ударил мечом орка. Орк упал на землю.
+  expect: {scene: [forest], sfx: [wolf_howl, sword_swing, sword_clash, fall]}
+
+tavern_rain:
+  mode: dnd
+  text: >
+    Начался сильный дождь, и герои поспешили в таверну.
+    Трактирщик пересчитал золотые монеты.
+  expect: {scene: [tavern], overlay_on: [rain], sfx: [coins]}
+
+cave_magic:
+  mode: dnd
+  text: >
+    Герои спустились в тёмную пещеру. Маг произнёс заклинание
+    и метнул огненный шар. Раздался взрыв.
+  expect: {scene: [cave], sfx: [magic, fireball, explosion]}
+
+kids_sea:
+  mode: kids
+  text: >
+    Маленький кораблик плыл по синему морю. Ночью на небе светили звёзды.
+    Вдруг из воды показался дракон и громко зарычал.
+  expect: {scene: [sea], overlay_on: [night]}
+  forbid: {sfx: [roar]}
+
+kids_forest_story:
+  mode: kids
+  text: >
+    Жила-была девочка, и пошла она в лес к бабушке.
+    На ветке сидела сова и ухнула. Девочка постучала в дверь.
+  expect: {scene: [forest], sfx: [owl, door_knock]}
+
+negation:
+  mode: dnd
+  text: >
+    Рыцарь не упал. Дракон не зарычал.
+  forbid: {sfx: [fall, roar]}

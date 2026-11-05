@@ -1,0 +1,11 @@
+numpy==2.4.6
+pygame==2.6.1
+pytest==9.2.0
+PyYAML==6.0.3
+scipy==1.17.1
+sentence-transformers==6.2.0
+snowballstemmer==3.1.1
+sounddevice==0.5.6
+torch==2.15.0
+transformers==5.22.1
+vosk==0.3.45

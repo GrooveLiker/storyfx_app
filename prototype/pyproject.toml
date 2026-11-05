@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "storyfx"
+version = "0.1.0"
+description = "Прототип: живая озвучка рассказа (ДнД, сказки)"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: сквозные тесты с моделями (Vosk, rubert-tiny2) и TTS-WAV",
+]
