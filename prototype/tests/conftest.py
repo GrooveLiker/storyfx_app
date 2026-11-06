@@ -9,7 +9,7 @@ from storyfx.asr import TextEvent
 from storyfx.audio import NullAudio
 from storyfx.engine import StoryEngine
 from storyfx.scenes import SceneTracker, load_scenes
-from storyfx.triggers import TriggerMatcher, load_triggers
+from storyfx.actions import ActionMatcher, load_actions
 
 TESTS = Path(__file__).parent
 
@@ -31,8 +31,8 @@ def clock():
 
 
 @pytest.fixture(scope="session")
-def triggers():
-    return load_triggers()
+def actions():
+    return load_actions()
 
 
 @pytest.fixture(scope="session")
@@ -45,10 +45,10 @@ def scenarios():
     return yaml.safe_load((TESTS / "scenarios.yaml").read_text(encoding="utf-8"))
 
 
-def make_engine(mode, triggers, scene_data, clock, embedder=None):
+def make_engine(mode, actions, scene_data, clock, embedder=None):
     scenes, overlays = scene_data
     return StoryEngine(
-        triggers=TriggerMatcher(triggers, mode=mode, clock=clock),
+        actions=ActionMatcher(list(actions), embedder=embedder, mode=mode, clock=clock),
         scenes=SceneTracker(list(scenes), list(overlays), embedder=embedder, mode=mode),
         audio=NullAudio(),
         log=lambda m: None,

@@ -6,7 +6,7 @@
 2. **Голос не сохраняется.** Аудио с микрофона не пишется на диск и никуда не отправляется. Исключение — тестовые WAV, синтезированные TTS.
 3. **Готово = проверено.** Задача считается сделанной только после прохождения команд из раздела «Проверка». «Код написан» ≠ «готово».
 4. **WIP = 1.** Одна активная задача из [PROGRESS.md](PROGRESS.md). Не расширять объём без записи в PROGRESS.md.
-5. **Звуки — только с понятной лицензией** (CC0 / свои / синтезированные). Источник и лицензию записывать в `prototype/sounds/LICENSES.md`.
+5. **Звуки — только с понятной лицензией** (CC0 / свои / синтезированные). Внешние — через `tools/fetch_freesound.py` (проверяет CC0) + `tools/pick_sounds.py` (пишет `sounds/chosen.yaml` и `LICENSES.md`). Ключ API — только в `prototype/.freesound_key`, не в коде и не в git.
 6. **Данные отдельно от кода.** Триггеры и сцены — в `prototype/data/*.yaml`, не хардкодить слова в Python.
 7. **Обновлять документы в том же изменении**, что меняет поведение (CLAUDE.md, PROGRESS.md, docs/).
 8. Платформа разработки — Windows 10, PowerShell. Python 3.11, виртуальное окружение `prototype/.venv`.
@@ -26,16 +26,16 @@ CLAUDE.md          — этот файл (маршрутизация)
 PROGRESS.md        — текущее состояние, задачи, следующий шаг
 DECISIONS.md       — журнал решений (почему так, что отвергли)
 docs/architecture.md — устройство конвейера
-docs/sounds.md     — как добавлять звуки, триггеры и сцены
+docs/sounds.md     — как добавлять звуки, действия (по смыслу) и сцены
 prototype/
   init.ps1         — установка окружения с нуля + быстрая проверка
   verify.ps1       — полная проверка (3 уровня)
   requirements.txt — зависимости с версиями
-  src/storyfx/     — код: asr, triggers, scenes, audio, engine, cli
-  data/            — triggers.yaml, scenes.yaml
-  sounds/          — ambience/*.wav, sfx/*.wav (генерируются tools/gen_sounds.py)
+  src/storyfx/     — код: asr, actions, scenes, audio, engine, cli
+  data/            — actions.yaml (действия по смыслу), scenes.yaml
+  sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор с Freesound), LICENSES.md
   models/          — модель Vosk (скачивается init.ps1, не в git)
-  tools/           — gen_sounds.py, make_test_wavs.py (TTS для тестов)
+  tools/           — gen_sounds.py (заглушки), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
   tests/           — pytest
 ```
 
@@ -48,7 +48,7 @@ prototype/
 ./.venv/Scripts/python -m storyfx --wav tests/wav/forest_dnd.wav --no-audio --fast  # прогнать WAV
 ```
 
-Из любой папки (корневой запускатель, те же аргументы): `D:\voice_app\run.cmd --mode dnd`
+Из любой папки (корневой запускатель, те же аргументы): `D:\storyfx_app\run.cmd --mode dnd`
 
 Совет: при работе с микрофоном используйте наушники — иначе микрофон слышит звуки приложения.
 
@@ -60,8 +60,8 @@ prototype/
 
 Уровни (по порядку, нельзя пропускать):
 1. **Статика** — `python -m compileall src` и загрузка YAML-данных.
-2. **Поведение** — `pytest -m "not slow"`: триггеры (словоформы, отрицания, кулдаун), логика сцен, движок с фейковым аудио.
-3. **Сквозная** — `pytest -m slow`: TTS-WAV → Vosk → триггеры/сцены дают ожидаемые события; классификатор rubert-tiny2 угадывает сцены.
+2. **Поведение** — `pytest -m "not slow"`: логика действий (части фразы, ожидание контекста, отрицания, кулдаун), сцены, движок с фейковым аудио.
+3. **Сквозная** — `pytest -m slow`: TTS-WAV → Vosk → ожидаемые события; выбор звука по смыслу на новых фразах (порог 85%); угадывание сцен.
 
 Ручная проверка (её агент сделать не может): живой микрофон, оценка на слух — записывать результаты в PROGRESS.md.
 

@@ -8,7 +8,7 @@ $py = ".\.venv\Scripts\python.exe"
 Write-Host "== 1/3 Статика: компиляция и загрузка данных"
 & $py -m compileall -q src tools tests
 if ($LASTEXITCODE -ne 0) { throw "ошибка компиляции" }
-& $py -c "from storyfx.triggers import load_triggers; from storyfx.scenes import load_scenes; t=load_triggers(); s,o=load_scenes(); print(f'  триггеров: {len(t)}, сцен: {len(s)}, наложений: {len(o)}')"
+& $py -c "from storyfx.actions import load_actions; from storyfx.scenes import load_scenes; a=load_actions(); s,o=load_scenes(); print(f'  тем действий: {len(a)}, звуков действий: {sum(len(g.sounds) for g in a)}, сцен: {len(s)}, наложений: {len(o)}')"
 if ($LASTEXITCODE -ne 0) { throw "ошибка в data/*.yaml" }
 
 Write-Host "== 2/3 Поведение: быстрые тесты"

@@ -446,7 +446,16 @@ def sfx_bell():
     return sum(tone(330 * r, 3.5, 1.2 / (1 + i * 0.5)) / (1 + i) for i, r in enumerate(ratios))
 
 
-def sfx_horse():
+def sfx_horse_snort():
+    """Фырканье: шумный выдох с дрожанием губ."""
+    d = 0.9
+    t = t_axis(d)
+    flutter = 0.55 + 0.45 * np.sin(2 * np.pi * 28 * t)
+    breath = filt(noise(d), "bandpass", [150, 1800], 2) * flutter
+    return breath * np.interp(t, [0, 0.05, 0.5, d], [0, 1, 0.6, 0])
+
+
+def sfx_horse_gallop():
     out = np.zeros(int(2.0 * SR))
     for k in range(6):
         for off in (0.0, 0.09, 0.17):

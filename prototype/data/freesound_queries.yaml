@@ -1,0 +1,48 @@
+# Поисковые запросы Freesound для каждого звука (tools/fetch_freesound.py).
+# Ищем только лицензию CC0. Запросы — по-английски: так на Freesound больше результатов.
+# queries: пробуются по порядку, пока не наберётся нужное число кандидатов.
+# min/max: длительность исходника в секундах (фильтр поиска).
+# cut: для действий — максимум секунд после обрезки тишины; для фона — длина петли.
+
+sfx:
+  sword_clash:  {queries: ["sword clash", "sword hit metal", "swords fight clang"], min: 0.3, max: 4, cut: 2.0}
+  sword_swing:  {queries: ["sword swing whoosh", "sword unsheathe", "blade whoosh"], min: 0.2, max: 3, cut: 1.5}
+  punch:        {queries: ["punch impact", "body punch hit", "fist punch"], min: 0.1, max: 2, cut: 1.0}
+  fall:         {queries: ["body fall thud", "body falling ground", "falling impact thud"], min: 0.3, max: 4, cut: 2.0}
+  splash:       {queries: ["water splash jump", "splash into water", "big splash"], min: 0.3, max: 4, cut: 2.5}
+  horse_gallop: {queries: ["horse gallop", "horse galloping", "horse hooves running"], min: 2, max: 20, cut: 4.0}
+  horse_snort:  {queries: ["horse snort", "horse neigh", "horse whinny"], min: 0.3, max: 5, cut: 2.5}
+  fireball:     {queries: ["fireball spell", "fire whoosh magic", "fire burst"], min: 0.5, max: 5, cut: 3.0}
+  lightning:    {queries: ["lightning spell", "electric zap magic", "lightning strike"], min: 0.5, max: 6, cut: 3.0}
+  ice:          {queries: ["ice spell", "freeze magic", "ice crystal shatter"], min: 0.3, max: 5, cut: 2.5}
+  heal:         {queries: ["healing spell", "heal magic chime", "magic heal"], min: 0.5, max: 5, cut: 3.0}
+  magic:        {queries: ["magic spell sparkle", "magic wand", "spell cast"], min: 0.5, max: 5, cut: 3.0}
+  explosion:    {queries: ["explosion", "big explosion boom", "cannon explosion"], min: 0.5, max: 8, cut: 4.0}
+  door_knock:   {queries: ["door knock", "knocking wooden door", "knock knock"], min: 0.3, max: 4, cut: 2.5}
+  door_creak:   {queries: ["door creak", "creaky door open", "old door squeak"], min: 0.5, max: 6, cut: 3.5}
+  footsteps:    {queries: ["footsteps stone", "footsteps walking", "footsteps wood floor"], min: 1.5, max: 15, cut: 3.5}
+  wolf_howl:    {queries: ["wolf howl", "wolf howling", "wolves howling"], min: 1, max: 15, cut: 5.0}
+  roar:         {queries: ["monster roar", "dragon roar", "beast growl roar"], min: 0.5, max: 6, cut: 3.5}
+  bird:         {queries: ["bird chirp", "songbird singing", "birds tweet"], min: 0.5, max: 10, cut: 3.0}
+  owl:          {queries: ["owl hoot", "owl hooting", "tawny owl"], min: 0.5, max: 10, cut: 3.0}
+  coins:        {queries: ["coins drop", "coins jingle", "coin pouch"], min: 0.3, max: 4, cut: 2.5}
+  bell:         {queries: ["church bell", "bell toll", "large bell ring"], min: 1, max: 15, cut: 5.0}
+  arrow:        {queries: ["arrow shot", "bow arrow release", "arrow whoosh impact"], min: 0.2, max: 3, cut: 1.5}
+  thunder:      {queries: ["thunder clap", "thunder rumble", "thunder strike"], min: 1, max: 12, cut: 5.0}
+
+ambience:
+  forest:  {queries: ["forest ambience birds", "forest ambience day", "woods birdsong ambience"], min: 30, max: 600, cut: 40}
+  meadow:  {queries: ["meadow ambience summer", "field ambience birds insects", "countryside ambience"], min: 30, max: 600, cut: 40}
+  river:   {queries: ["river stream ambience", "creek water flowing", "brook stream"], min: 30, max: 600, cut: 40}
+  sea:     {queries: ["ocean waves beach", "sea waves shore", "calm sea waves"], min: 30, max: 600, cut: 40}
+  cave:    {queries: ["cave ambience dripping", "cave drips echo", "dungeon ambience"], min: 30, max: 600, cut: 40}
+  castle:  {queries: ["castle hall ambience", "large hall room tone medieval", "cathedral ambience"], min: 30, max: 600, cut: 40}
+  tavern:  {queries: ["tavern ambience", "medieval tavern crowd", "pub crowd ambience"], min: 30, max: 600, cut: 40}
+  city:    {queries: ["medieval market ambience", "town square crowd ambience", "marketplace crowd"], min: 30, max: 600, cut: 40}
+  battle:  {queries: ["medieval battle ambience", "battle swords crowd", "war battle sounds"], min: 20, max: 600, cut: 40}
+  night:   {queries: ["night crickets ambience", "crickets night", "summer night insects"], min: 30, max: 600, cut: 40}
+  rain:    {queries: ["rain ambience", "steady rain", "rain on leaves"], min: 30, max: 600, cut: 40}
+  storm:   {queries: ["thunderstorm rain", "storm thunder rain ambience", "heavy storm"], min: 30, max: 600, cut: 40}
+  wind:    {queries: ["wind ambience", "wind howling", "strong wind"], min: 30, max: 600, cut: 40}
+  snow:    {queries: ["blizzard wind", "winter wind snow", "snowstorm ambience"], min: 30, max: 600, cut: 40}
+  fire:    {queries: ["campfire crackling", "fireplace crackle", "fire crackling"], min: 30, max: 600, cut: 40}

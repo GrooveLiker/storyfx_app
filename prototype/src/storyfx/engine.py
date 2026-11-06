@@ -8,15 +8,16 @@ from typing import Callable
 from . import config
 from .asr import TextEvent
 from .scenes import SceneTracker
-from .triggers import TriggerMatcher
+from .actions import ActionMatcher
 
 
 @dataclass
 class StoryEngine:
-    triggers: TriggerMatcher
+    actions: ActionMatcher
     scenes: SceneTracker
     audio: object                                   # PygameAudio | NullAudio
     log: Callable[[str], None] = print
+    verbose: bool = True                            # печатать и решения «без звука» — помогает настраивать примеры
     clock: Callable[[], float] = time.monotonic
     events: list[tuple[str, str]] = field(default_factory=list)   # для тестов: ("sfx", id), ("scene", id)…
     _utt: int = 0
@@ -31,10 +32,13 @@ class StoryEngine:
         self.log(f"[{self.clock() - self._t0:6.1f}s] {msg}")
 
     def on_text(self, ev: TextEvent) -> None:
-        for f in self.triggers.process(ev.text, self._utt, ev.final):
-            self.audio.play_sfx(f.sfx)
-            self.events.append(("sfx", f.sfx))
-            self._say(f"ДЕЙСТВИЕ {f.sfx:<12} ← «{f.text}» (фраза: {f.phrase})")
+        for d in self.actions.process(ev.text, self._utt, ev.final):
+            if d.sfx:
+                self.audio.play_sfx(d.sfx)
+                self.events.append(("sfx", d.sfx))
+                self._say(f"ДЕЙСТВИЕ {d.sfx:<12} ← «{d.context}» ({d.group}, {d.confidence:.2f})")
+            elif self.verbose:
+                self._say(f"  тише   {d.group:<12} ← «{d.context}» ({d.note}, {d.confidence:.2f})")
 
         if ev.final:
             self._say(f"фраза: {ev.text}")

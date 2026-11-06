@@ -9,7 +9,7 @@ from .asr import mic_events, stdin_lines, text_events, wav_events
 from .audio import NullAudio
 from .engine import StoryEngine
 from .scenes import SceneTracker, load_scenes
-from .triggers import TriggerMatcher, load_triggers
+from .actions import ActionMatcher, load_actions
 
 
 def build_engine(mode: str, audio, use_embedder: bool = True, log=print) -> StoryEngine:
@@ -20,7 +20,7 @@ def build_engine(mode: str, audio, use_embedder: bool = True, log=print) -> Stor
         embedder = RuBertEmbedder()
     scenes, overlays = load_scenes()
     return StoryEngine(
-        triggers=TriggerMatcher(load_triggers(), mode=mode),
+        actions=ActionMatcher(load_actions(), embedder=embedder, mode=mode),
         scenes=SceneTracker(scenes, overlays, embedder=embedder, mode=mode),
         audio=audio,
         log=log,

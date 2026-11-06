@@ -13,9 +13,20 @@ def _wav(path):
         return x, w.getframerate()
 
 
-def test_every_trigger_has_sound(triggers):
-    missing = [t.id for t in triggers if not (config.SOUNDS_DIR / "sfx" / f"{t.id}.wav").exists()]
+def test_every_action_has_sound(actions):
+    missing = [s for g in actions for s in g.sounds if not (config.SOUNDS_DIR / "sfx" / f"{s}.wav").exists()]
     assert not missing, f"нет sounds/sfx для: {missing}"
+
+
+def test_actions_have_enough_examples(actions):
+    few = [f"{g.id}.{v.id}" for g in actions for v in g.variants if len(v.examples) < 2]
+    assert not few, f"меньше 2 примеров: {few}"
+
+
+def test_every_sound_is_used(actions, scene_data):
+    used = {s for g in actions for s in g.sounds}
+    unused = [p.stem for p in (config.SOUNDS_DIR / "sfx").glob("*.wav") if p.stem not in used]
+    assert not unused, f"звуки не используются ни одной темой: {unused}"
 
 
 def test_every_scene_has_sound(scene_data):

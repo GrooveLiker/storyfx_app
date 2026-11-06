@@ -26,7 +26,12 @@ if (-not (Test-Path $vosk)) {
 Write-Host "4/6 Модель смысла rubert-tiny2 (~120 МБ, Hugging Face)"
 & $py -c "from storyfx.scenes import RuBertEmbedder; RuBertEmbedder(); print('  ok')"
 
-Write-Host "5/6 Звуки-заглушки и тестовые WAV"
+Write-Host "5/6 Звуки: выбранные с Freesound (если есть ключ), остальное — заглушки; тестовые WAV"
+if ((Test-Path sounds\chosen.yaml) -and ((Test-Path .freesound_key) -or $env:FREESOUND_API_KEY)) {
+    & $py tools\fetch_freesound.py --chosen
+} elseif (Test-Path sounds\chosen.yaml) {
+    Write-Host "  нет ключа Freesound — вместо настоящих звуков будут заглушки (docs/sounds.md)"
+}
 & $py tools\gen_sounds.py
 & $py tools\make_test_wavs.py
 
