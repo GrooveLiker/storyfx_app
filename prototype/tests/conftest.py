@@ -41,18 +41,34 @@ def scene_data():
 
 
 @pytest.fixture(scope="session")
+def mood_data():
+    from storyfx.mood import load_moods
+    return load_moods()
+
+
+@pytest.fixture(scope="session")
 def scenarios():
     return yaml.safe_load((TESTS / "scenarios.yaml").read_text(encoding="utf-8"))
 
 
-def make_engine(mode, actions, scene_data, clock, embedder=None):
+@pytest.fixture(scope="session")
+def characters():
+    from storyfx.characters import load_characters
+    return load_characters()
+
+
+def make_engine(actions, scene_data, clock, embedder=None, characters=None, mixer=False):
+    from storyfx.characters import CharacterTracker
+    from storyfx.mixer import SoundMixer
     scenes, overlays = scene_data
     return StoryEngine(
-        actions=ActionMatcher(list(actions), embedder=embedder, mode=mode, clock=clock),
-        scenes=SceneTracker(list(scenes), list(overlays), embedder=embedder, mode=mode),
+        actions=ActionMatcher(list(actions), embedder=embedder, clock=clock),
+        scenes=SceneTracker(list(scenes), list(overlays), embedder=embedder),
+        mixer=SoundMixer(clock=clock) if mixer else None,
         audio=NullAudio(),
         log=lambda m: None,
         clock=clock,
+        characters=CharacterTracker(list(characters), clock=clock) if characters else None,
     )
 
 

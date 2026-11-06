@@ -15,9 +15,9 @@ class KeywordishEmbedder:
         return np.array(out)
 
 
-def tracker(scene_data, mode="dnd", embedder=None):
+def tracker(scene_data, embedder=None):
     scenes, overlays = scene_data
-    return SceneTracker(list(scenes), list(overlays), embedder=embedder, mode=mode)
+    return SceneTracker(list(scenes), list(overlays), embedder=embedder)
 
 
 def kinds(changes):
@@ -29,6 +29,14 @@ def test_explicit_keyword_switches_immediately(scene_data):
     assert ("scene", "forest") in kinds(t.add_utterance("отряд вошёл в густой лес"))
     assert ("scene", "tavern") in kinds(t.add_utterance("герои зашли в таверну"))
     assert t.current == "tavern"
+
+
+def test_fairytale_scenes_by_keyword(scene_data):
+    t = tracker(scene_data)
+    assert ("scene", "village") in kinds(t.add_utterance("жили-были дед да баба в деревне"))
+    assert ("scene", "home") in kinds(t.add_utterance("бабушка испекла пирожки в печи"))
+    assert ("scene", "swamp") in kinds(t.add_utterance("стрела упала прямо в болото"))
+    assert ("scene", "castle") in kinds(t.add_utterance("Иван пришёл во дворец"))   # «дворец» — не «двор»
 
 
 def test_semantic_switch_needs_confirmation(scene_data):
@@ -64,9 +72,10 @@ def test_max_overlays(scene_data):
     assert len(t.active_overlays) == 2 and "rain" not in t.active_overlays
 
 
-def test_kids_mode_excludes_scary(scene_data):
-    t = tracker(scene_data, mode="kids")
+def test_battle_and_storm_always_available(scene_data):
+    """Режимов больше нет (D-010): битва и гроза доступны всегда."""
+    t = tracker(scene_data)
     t.add_utterance("началась битва")
-    assert t.current != "battle"
+    assert t.current == "battle"
     t.add_utterance("разразилась гроза")
-    assert "storm" not in t.active_overlays
+    assert "storm" in t.active_overlays

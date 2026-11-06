@@ -4,63 +4,53 @@
 # Фразы НЕ должны совпадать с примерами из data/actions.yaml — проверяем обобщение по смыслу.
 
 forest_dnd:
-  mode: dnd
   text: >
     Отряд вошёл в густой лес. Где-то вдалеке протяжно завыли волки.
     Воин выхватил меч. Он изо всех сил ударил мечом по щиту орка. Орк упал на землю.
   expect: {scene: [forest], sfx: [wolf_howl, sword_swing, sword_clash, fall]}
 
 tavern_rain:
-  mode: dnd
   text: >
     Начался сильный дождь, и герои поспешили в таверну.
     Хозяин высыпал на прилавок горсть золотых монет.
   expect: {scene: [tavern], overlay_on: [rain], sfx: [coins]}
 
 cave_magic:
-  mode: dnd
   text: >
     Герои спустились в тёмную пещеру. Маг поднял посох и запустил в гоблинов огненный шар.
     Раздался оглушительный взрыв.
   expect: {scene: [cave], sfx: [fireball, explosion]}
 
 kids_sea:
-  mode: kids
   text: >
     Маленький кораблик плыл по синему морю. Ночью на небе светили звёзды.
     Вдруг из воды показался дракон и громко зарычал.
-  expect: {scene: [sea], overlay_on: [night]}
-  forbid: {sfx: [roar]}
+  expect: {scene: [sea], overlay_on: [night], sfx: [roar]}   # режимов нет (D-010): рёв звучит
 
 kids_forest_story:
-  mode: kids
   text: >
     Жила-была девочка, и пошла она в лес к бабушке.
     На старой ели громко ухнула сова. Девочка тихонько постучала в дверь.
   expect: {scene: [forest], sfx: [owl, door_knock]}
 
 horse_gallop:
-  mode: dnd
   text: >
     Вдруг на дорогу выскочил всадник и во весь опор помчался к замку.
   expect: {sfx: [horse_gallop]}
   forbid: {sfx: [horse_snort]}
 
 horse_pet:
-  mode: kids
   text: >
     Девочка подошла к лошадке и ласково погладила её по мягкой гриве.
   expect: {sfx: [horse_snort]}
   forbid: {sfx: [horse_gallop]}
 
 horse_none:
-  mode: kids
   text: >
     У старого мельника была серая лошадь.
   forbid: {sfx: [horse_gallop, horse_snort]}
 
 negation:
-  mode: dnd
   text: >
     Рыцарь не упал. Дракон так и не зарычал.
   forbid: {sfx: [fall, roar]}

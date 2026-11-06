@@ -22,25 +22,32 @@ class NullAudio:
     def play_sfx(self, sfx: str) -> None:
         self.log.append(("sfx", sfx))
 
+    def set_music(self, music: str | None) -> None:
+        self.log.append(("music", music))
+
+    def set_mix(self, levels: tuple[float, float, float, float]) -> None:
+        self.mix = levels           # не в log: меняется почти на каждом слове
+
     def close(self) -> None:
         pass
 
 
 class PygameAudio:
-    def __init__(self, mode: str = "dnd", sounds_dir: Path = config.SOUNDS_DIR,
-                 crossfade_ms: int = config.CROSSFADE_MS):
+    def __init__(self, sounds_dir: Path = config.SOUNDS_DIR, crossfade_ms: int = config.CROSSFADE_MS):
         os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
         import pygame
         self.pg = pygame
         pygame.mixer.pre_init(44100, -16, 2, 512)   # малый буфер = малая задержка
         pygame.mixer.init()
         pygame.mixer.set_num_channels(32)
+        pygame.mixer.set_reserved(2)       # каналы 0 и 1 — только музыка: find_channel их не отдаст звукам
         self.dir = sounds_dir
         self.xfade = crossfade_ms
-        self.vol_scene, self.vol_overlay, self.vol_sfx = config.VOLUMES[mode]
+        self.vol_scene, self.vol_overlay, self.vol_sfx, self.vol_music = config.MIX_CALM   # дальше — set_mix
         self._cache: dict[Path, object] = {}
         self._scene: tuple[str, object] | None = None          # (ambience, Channel)
         self._overlays: dict[str, object] = {}                 # ambience → Channel
+        self._music: tuple[str, int] | None = None             # (имя, номер канала 0/1)
         missing = [p for p in [self.dir / "ambience", self.dir / "sfx"] if not p.exists()]
         if missing:
             raise FileNotFoundError(f"нет папок со звуками: {missing}. Запустите tools/gen_sounds.py")
@@ -53,6 +60,34 @@ class PygameAudio:
                 return None
             self._cache[path] = self.pg.mixer.Sound(str(path))
         return self._cache[path]
+
+    def set_mix(self, levels: tuple[float, float, float, float]) -> None:
+        """Звукооператор: новые громкости слоёв — сразу для играющих петель и для следующих звуков.
+        Плавность обеспечивает mixer.py (маленькие шаги на каждом слове)."""
+        self.vol_scene, self.vol_overlay, self.vol_sfx, self.vol_music = levels
+        if self._scene:
+            self._scene[1].set_volume(self.vol_scene)
+        for ch in self._overlays.values():
+            ch.set_volume(self.vol_overlay)
+        if self._music:
+            self.pg.mixer.Channel(self._music[1]).set_volume(self.vol_music)
+
+    def set_music(self, music: str | None) -> None:
+        """Сменить петлю музыки (None — выключить). Старая затухает, новая нарастает на втором канале."""
+        if (self._music[0] if self._music else None) == music:
+            return
+        nxt = 0
+        if self._music:
+            self.pg.mixer.Channel(self._music[1]).fadeout(config.MUSIC_CROSSFADE_MS)
+            nxt = 1 - self._music[1]
+            self._music = None
+        if music:
+            snd = self._sound("music", music)
+            if snd is not None:
+                ch = self.pg.mixer.Channel(nxt)
+                ch.set_volume(self.vol_music)
+                ch.play(snd, loops=-1, fade_ms=config.MUSIC_CROSSFADE_MS)
+                self._music = (music, nxt)
 
     def _start_loop(self, name: str, volume: float):
         snd = self._sound("ambience", name)

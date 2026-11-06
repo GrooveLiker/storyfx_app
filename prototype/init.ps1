@@ -33,6 +33,7 @@ if ((Test-Path sounds\chosen.yaml) -and ((Test-Path .freesound_key) -or $env:FRE
     Write-Host "  нет ключа Freesound — вместо настоящих звуков будут заглушки (docs/sounds.md)"
 }
 & $py tools\gen_sounds.py
+& $py tools\gen_music.py
 & $py tools\make_test_wavs.py
 
 Write-Host "6/6 Быстрые тесты"
@@ -41,4 +42,4 @@ if ($LASTEXITCODE -ne 0) { throw "быстрые тесты не прошли" }
 
 Write-Host ""
 Write-Host "Готово. Полная проверка: ./verify.ps1"
-Write-Host "Запуск с микрофоном:     .\.venv\Scripts\python -m storyfx --mode dnd"
+Write-Host "Запуск с микрофоном:     .\.venv\Scripts\python -m storyfx"

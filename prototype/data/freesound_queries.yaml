@@ -30,6 +30,37 @@ sfx:
   arrow:        {queries: ["arrow shot", "bow arrow release", "arrow whoosh impact"], min: 0.2, max: 3, cut: 1.5}
   thunder:      {queries: ["thunder clap", "thunder rumble", "thunder strike"], min: 1, max: 12, cut: 5.0}
 
+  # --- голоса персонажей при появлении (data/characters.yaml, docs/characters.md) ---
+  bear_growl:     {queries: ["bear growl", "bear roar", "grizzly growl"], min: 0.5, max: 8, cut: 2.5}
+  fox_yelp:       {queries: ["fox bark", "fox yelp", "red fox call"], min: 0.3, max: 8, cut: 2.0}
+  cat_meow:       {queries: ["cat meow", "kitten meow", "cat meowing"], min: 0.3, max: 5, cut: 1.5}
+  fanfare:        {queries: ["royal fanfare trumpet", "medieval fanfare", "trumpet fanfare short"], min: 1, max: 10, cut: 4.0}
+  hare_hop:       {queries: ["rustling grass", "grass rustle", "leaves rustle short", "rabbit"], min: 0.3, max: 10, cut: 1.5}
+  old_man_grunt:  {queries: ["old man cough", "man groan", "man sigh", "grunt effort"], min: 0.3, max: 6, cut: 1.5}
+  rooster:        {queries: ["rooster crow", "rooster crowing", "cock a doodle doo"], min: 1, max: 8, cut: 3.0}
+  old_woman_sigh: {queries: ["woman sigh", "female sigh", "sigh", "woman groan"], min: 0.3, max: 6, cut: 1.5}
+  child_laugh:    {queries: ["child laugh", "kid giggle", "children laughing"], min: 0.5, max: 6, cut: 2.0}
+  mouse_squeak:   {queries: ["mouse squeak", "mice squeaking", "rat squeak"], min: 0.2, max: 4, cut: 1.0}
+  frog_croak:     {queries: ["frog croak", "single frog croak", "toad croak"], min: 0.3, max: 6, cut: 1.5}
+  dog_bark:       {queries: ["dog bark", "dog barking twice", "medium dog bark"], min: 0.3, max: 5, cut: 1.5}
+  evil_laugh:     {queries: ["evil laugh male", "villain laugh", "sinister laugh"], min: 0.5, max: 8, cut: 3.0}
+  witch_cackle:   {queries: ["witch cackle", "witch laugh", "old witch laughing"], min: 0.5, max: 8, cut: 3.0}
+  goose_honk:     {queries: ["goose honk", "geese honking", "goose call"], min: 0.3, max: 6, cut: 2.0}
+  duck_quack:     {queries: ["duck quack", "duck quacking", "mallard quack"], min: 0.3, max: 5, cut: 1.5}
+  insect_buzz:    {queries: ["fly buzzing", "bee buzz", "insect buzz"], min: 0.5, max: 8, cut: 2.0}
+  monkey:         {queries: ["monkey chatter", "monkeys jungle calls", "chimpanzee scream", "macaque"], min: 0.5, max: 15, cut: 2.5}
+  cow_moo:        {queries: ["cow moo", "cow mooing", "single cow moo"], min: 0.5, max: 6, cut: 2.5}
+  goat_bleat:     {queries: ["goat bleat", "goat baa", "sheep bleat"], min: 0.3, max: 5, cut: 1.5}
+  giant_steps:    {queries: ["giant footsteps", "heavy footsteps boom", "monster footsteps"], min: 1, max: 10, cut: 3.0}
+  hen_cluck:      {queries: ["hen clucking", "chicken cluck", "hen cackle"], min: 0.5, max: 6, cut: 2.0}
+  crow_caw:       {queries: ["crow caw", "raven call", "crow cawing"], min: 0.3, max: 6, cut: 2.0}
+  whistle:        {queries: ["finger whistle", "man whistling loud", "wolf whistle", "whistling mouth"], min: 0.3, max: 8, cut: 2.0}
+  hedgehog_snuffle: {queries: ["hedgehog sniffing", "hedgehog", "small animal sniff"], min: 0.3, max: 8, cut: 1.5}
+  elephant:       {queries: ["elephant trumpet", "elephant call", "elephant roar"], min: 0.5, max: 8, cut: 2.5}
+  snake_hiss:     {queries: ["snake hiss", "snake hissing", "hiss"], min: 0.3, max: 5, cut: 1.5}
+  donkey_bray:    {queries: ["donkey bray", "donkey hee haw", "donkey"], min: 0.5, max: 8, cut: 3.0}
+  propeller:      {queries: ["small propeller", "propeller motor", "toy propeller"], min: 0.5, max: 10, cut: 2.0}
+
 ambience:
   forest:  {queries: ["forest ambience birds", "forest ambience day", "woods birdsong ambience"], min: 30, max: 600, cut: 40}
   meadow:  {queries: ["meadow ambience summer", "field ambience birds insects", "countryside ambience"], min: 30, max: 600, cut: 40}
@@ -39,6 +70,9 @@ ambience:
   castle:  {queries: ["castle hall ambience", "large hall room tone medieval", "cathedral ambience"], min: 30, max: 600, cut: 40}
   tavern:  {queries: ["tavern ambience", "medieval tavern crowd", "pub crowd ambience"], min: 30, max: 600, cut: 40}
   city:    {queries: ["medieval market ambience", "town square crowd ambience", "marketplace crowd"], min: 30, max: 600, cut: 40}
+  home:    {queries: ["fireplace room", "clock ticking room", "wood stove", "cozy room ambience", "room tone old house"], min: 30, max: 600, cut: 40}
+  village: {queries: ["farm ambience rooster chickens", "village farmyard ambience", "barnyard animals ambience"], min: 30, max: 600, cut: 40}
+  swamp:   {queries: ["frogs croaking", "frogs pond", "swamp ambience", "marsh frogs"], min: 30, max: 600, cut: 40}
   battle:  {queries: ["medieval battle ambience", "battle swords crowd", "war battle sounds"], min: 20, max: 600, cut: 40}
   night:   {queries: ["night crickets ambience", "crickets night", "summer night insects"], min: 30, max: 600, cut: 40}
   rain:    {queries: ["rain ambience", "steady rain", "rain on leaves"], min: 30, max: 600, cut: 40}

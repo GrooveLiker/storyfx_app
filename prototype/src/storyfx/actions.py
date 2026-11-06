@@ -31,7 +31,6 @@ NONE = "_none"
 class Variant:
     id: str
     examples: list[str]
-    scary: bool = False
 
 
 @dataclass
@@ -40,7 +39,6 @@ class ActionGroup:
     topic: list[Pattern]
     variants: list[Variant]
     cooldown: float = config.DEFAULT_COOLDOWN_S
-    scary: bool = False
 
     @property
     def sounds(self) -> list[str]:
@@ -60,9 +58,9 @@ def load_actions(path: Path = config.DATA_DIR / "actions.yaml") -> list[ActionGr
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     groups = []
     for gid, g in raw.items():
-        variants = [Variant(vid, list(v["examples"]), bool(v.get("scary", False))) for vid, v in g["variants"].items()]
+        variants = [Variant(vid, list(v["examples"])) for vid, v in g["variants"].items()]
         groups.append(ActionGroup(gid, [parse_pattern(p) for p in g["topic"]], variants,
-                                  float(g.get("cooldown", config.DEFAULT_COOLDOWN_S)), bool(g.get("scary", False))))
+                                  float(g.get("cooldown", config.DEFAULT_COOLDOWN_S))))
     return groups
 
 
@@ -129,15 +127,12 @@ def split_clauses(tokens: list[Token]) -> list[tuple[int, int, bool]]:
 class ActionMatcher:
     groups: list[ActionGroup]
     embedder: object | None = None
-    mode: str = "dnd"
     clock: Callable[[], float] = time.monotonic
     _seen: set[tuple[int, int, str]] = field(default_factory=set)    # (фраза, начало части, тема)
     _last_fired: dict[str, float] = field(default_factory=dict)
     _clf: dict[str, object] = field(default_factory=dict)
 
     def __post_init__(self):
-        if self.mode == "kids":
-            self.groups = [g for g in self.groups if not g.scary]
         if self.embedder is not None:
             texts = [e for g in self.groups for v in g.variants for e in v.examples]
             X = self.embedder.encode(texts)
@@ -195,8 +190,6 @@ class ActionMatcher:
                     decisions.append(Decision(g.id, None, conf, ctx, "по смыслу без звука"))
                 elif conf < config.ACTION_MIN_CONF:
                     decisions.append(Decision(g.id, None, conf, ctx, f"не уверен ({label})"))
-                elif variant.scary and self.mode == "kids":
-                    decisions.append(Decision(g.id, None, conf, ctx, f"страшный звук ({label})"))
                 elif now - self._last_fired.get(label, -1e9) < g.cooldown:
                     decisions.append(Decision(g.id, None, conf, ctx, f"кулдаун ({label})"))
                 else:

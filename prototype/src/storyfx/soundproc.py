@@ -36,10 +36,20 @@ def write_wav(path: Path, x: np.ndarray, sr: int = SR) -> None:
         w.writeframes(pcm.tobytes())
 
 
+MAX_LIMIT_GAIN = 4.0    # насколько можно поднять сверх «пик упёрся в потолок» (≈ +12 дБ)
+
+
 def _level(x: np.ndarray, rms_target: float, peak_max: float) -> np.ndarray:
+    """Средняя громкость → rms_target. Если мешают редкие резкие пики (треск костра, капли),
+    поднимаем всё равно (не больше MAX_LIMIT_GAIN) и мягко скругляем пики tanh — не выше peak_max.
+    Поточечно, поэтому стык петли не портится."""
     rms = float(np.sqrt(np.mean(x ** 2))) + 1e-9
     peak = float(np.max(np.abs(x))) + 1e-9
-    return x * min(rms_target / rms, peak_max / peak)
+    gain = rms_target / rms
+    if gain * peak <= peak_max:
+        return x * gain
+    gain = min(gain, peak_max / peak * MAX_LIMIT_GAIN)
+    return peak_max * np.tanh(x * gain / peak_max)
 
 
 def _fade(x: np.ndarray, fade_in: float, fade_out: float, sr: int) -> np.ndarray:

@@ -3,6 +3,7 @@
   python tools/pick_sounds.py            # по очереди все звуки, у которых есть кандидаты и ещё нет выбора
   python tools/pick_sounds.py --only owl # только этот (можно переизбрать)
   python tools/pick_sounds.py --auto     # без прослушивания: взять кандидата №1 везде, где нет выбора
+  python tools/pick_sounds.py --pick owl=2,ambience/night=5   # без прослушивания: эти номера
 
 Выбранный файл копируется в sounds/<sfx|ambience>/<id>.wav (поверх заглушки),
 запись — в sounds/chosen.yaml (в git), авторы — в sounds/LICENSES.md.
@@ -68,9 +69,23 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", help="через запятую: id звуков")
     ap.add_argument("--auto", action="store_true", help="взять кандидата №1 без прослушивания")
+    ap.add_argument("--pick", help="без прослушивания: id=номер через запятую (owl=2,ambience/night=5)")
     args = ap.parse_args()
     only = set(args.only.split(",")) if args.only else None
     chosen = load_chosen()
+
+    if args.pick:
+        want = dict(item.split("=") for item in args.pick.split(","))
+        for kind, sid, metas in folders(None):
+            n = want.get(f"{kind}/{sid}", want.get(sid))
+            if n is None:
+                continue
+            c = next((m for m in metas if str(m["n"]) == n), None)
+            if c is None:
+                print(f"  ! {kind}/{sid}: нет кандидата №{n}")
+                continue
+            install(kind, sid, c, chosen)
+        return 0
 
     if args.auto:
         for kind, sid, metas in folders(only):

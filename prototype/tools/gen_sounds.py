@@ -279,10 +279,40 @@ def amb_snow():
     return filt(noise(AD + 1), "bandpass", [900, 2000], 2) * smooth_rand(AD + 1, 0.25, 0.2, 1) + filt(noise(AD + 1), "lowpass", 300) * 0.5
 
 
+def amb_home():
+    """Изба: тихий гул комнаты, ходики раз в секунду, редкое потрескивание печи."""
+    out = filt(noise(AD + 1), "lowpass", 200) * 0.3
+    for at in np.arange(0.5, AD, 1.0):
+        place(out, metal_ping(rng.uniform(1800, 2000), 0.05, 0.01), at, 0.25)
+    return out + crackle(AD + 1, 4) * 0.4
+
+
+def amb_village():
+    """Деревенский двор: птицы, редкое «кудахтанье» (короткие тоны) и далёкий гул."""
+    out = amb_meadow() * 0.8
+    for at in rng.uniform(0.5, AD - 1, 8):
+        for k in range(rng.integers(2, 5)):
+            place(out, tone(rng.uniform(500, 700), 0.08, 0.03), at + k * 0.12, 0.15)
+    return out
+
+
+def amb_swamp():
+    """Болото: низкое кваканье пачками и бульканье."""
+    out = filt(noise(AD + 1), "lowpass", 250) * 0.3
+    t = 0.3
+    while t < AD - 1:
+        f = rng.uniform(180, 320)
+        for k in range(rng.integers(2, 5)):
+            place(out, tone(lambda tt, f=f: f * (1 + 0.3 * np.sin(tt * 60)), 0.12, 0.05), t + k * 0.16, 0.5)
+        t += rng.exponential(1.2)
+    return out + drips(AD + 1, 0.5) * 0.2
+
+
 AMBIENCE = {
     "wind": amb_wind, "rain": amb_rain, "storm": amb_storm, "forest": amb_forest, "meadow": amb_meadow,
     "night": amb_night, "river": amb_river, "sea": amb_sea, "cave": amb_cave, "castle": amb_castle,
     "tavern": amb_tavern, "city": amb_city, "battle": amb_battle, "fire": amb_fire, "snow": amb_snow,
+    "home": amb_home, "village": amb_village, "swamp": amb_swamp,
 }
 
 
@@ -461,6 +491,167 @@ def sfx_horse_gallop():
         for off in (0.0, 0.09, 0.17):
             place(out, thump(250, 0.08), k * 0.32 + off, 0.7)
     return out
+
+
+# ---------- голоса персонажей (заглушки; настоящие — с Freesound, docs/characters.md) ----------
+def voice(f0: float, f1: float, dur: float, formant=(300, 2500), rough: float = 0.0,
+          vib: float = 0.0, vib_rate: float = 6.0) -> np.ndarray:
+    """Грубая модель голоса: пила с контуром высоты → полосовой фильтр (форманта) → огибающая."""
+    t = t_axis(dur)
+    f = (f0 + (f1 - f0) * t / dur) * (1 + vib * np.sin(2 * np.pi * vib_rate * t))
+    saw = 2 * ((np.cumsum(f) / SR) % 1) - 1
+    x = filt(saw, "bandpass", list(formant), 2)
+    if rough:
+        x *= 1 - rough + rough * np.abs(filt(noise(dur), "lowpass", 60, 2)) * 3
+    return x * np.sin(np.pi * t / dur) ** 0.6
+
+
+def seq(parts: list[tuple[float, np.ndarray]], total: float) -> np.ndarray:
+    out = np.zeros(int(total * SR))
+    for at, x in parts:
+        place(out, x, at)
+    return out
+
+
+def sfx_bear_growl():
+    return voice(95, 70, 1.3, (120, 900), rough=0.8) + filt(noise(1.3), "lowpass", 300) * exp_env(1.3, 0.5) * 0.3
+
+
+def sfx_fox_yelp():
+    return seq([(i * 0.2, voice(900, 1500, 0.12, (800, 3500))) for i in range(3)], 0.8)
+
+
+def sfx_hare_hop():
+    rustle = lambda: filt(noise(0.15), "bandpass", [1500, 6000], 2) * exp_env(0.15, 0.04) * 0.6  # noqa: E731
+    return seq([p for i in range(3) for p in ((i * 0.25, thump(220, 0.06)), (i * 0.25, rustle()))], 1.0)
+
+
+def sfx_mouse_squeak():
+    return seq([(i * 0.15, chirp(3000, 3900, 0.07)) for i in range(3)], 0.6)
+
+
+def sfx_frog_croak():
+    def croak():
+        x = voice(130, 115, 0.45, (200, 1600), rough=0.3)
+        return x * (np.sin(2 * np.pi * 22 * t_axis(0.45)) > -0.2)
+    return seq([(0, croak()), (0.6, croak())], 1.2)
+
+
+def sfx_rooster():
+    notes = [(500, 620, 0.14), (620, 720, 0.14), (720, 860, 0.2), (900, 600, 0.6)]
+    parts, at = [], 0.0
+    for f0, f1, d in notes:
+        parts.append((at, voice(f0, f1, d, (600, 3500), vib=0.02, vib_rate=25)))
+        at += d * 0.9
+    return seq(parts, at + 0.2)
+
+
+def sfx_hen_cluck():
+    parts = [(i * 0.14, voice(420, 500, 0.08, (500, 2500))) for i in range(4)]
+    return seq(parts + [(0.62, voice(500, 750, 0.3, (500, 2500)))], 1.1)
+
+
+def sfx_cat_meow():
+    return seq([(0, voice(480, 820, 0.25, (500, 3000))), (0.22, voice(820, 430, 0.45, (500, 3000)))], 0.8)
+
+
+def sfx_dog_bark():
+    return seq([(0, voice(380, 260, 0.16, (300, 2200), rough=0.5)), (0.32, voice(400, 270, 0.16, (300, 2200), rough=0.5))], 0.7)
+
+
+def sfx_donkey_bray():
+    parts = []
+    for i in range(2):
+        parts += [(i * 1.0, voice(800, 950, 0.4, (600, 3000))), (i * 1.0 + 0.45, voice(320, 250, 0.5, (250, 1500), rough=0.4))]
+    return seq(parts, 2.1)
+
+
+def sfx_cow_moo():
+    return voice(120, 135, 1.5, (150, 900), vib=0.01)
+
+
+def sfx_goat_bleat():
+    return voice(460, 420, 0.8, (400, 2500), vib=0.07, vib_rate=9)
+
+
+def sfx_goose_honk():
+    return seq([(i * 0.28, voice(460, 400, 0.2, (500, 3000), rough=0.3)) for i in range(3)], 1.0)
+
+
+def sfx_duck_quack():
+    return seq([(i * 0.22, voice(620, 500, 0.15, (900, 2500), rough=0.2)) for i in range(3)], 0.8)
+
+
+def sfx_crow_caw():
+    return seq([(i * 0.4, voice(720, 600, 0.3, (800, 2500), rough=0.6)) for i in range(3)], 1.3)
+
+
+def sfx_whistle():
+    return seq([(0, chirp(1500, 3500, 0.6)), (0.6, chirp(3500, 1800, 0.5))], 1.2)
+
+
+def sfx_hedgehog_snuffle():
+    return seq([(i * 0.12, filt(noise(0.06), "bandpass", [800, 3000], 2) * exp_env(0.06, 0.02)) for i in range(6)], 0.9)
+
+
+def sfx_insect_buzz():
+    t = t_axis(1.5)
+    f = 220 * (1 + 0.05 * np.sin(2 * np.pi * 3 * t))
+    saw = 2 * ((np.cumsum(f) / SR) % 1) - 1
+    return filt(saw, "bandpass", [300, 3000], 2) * smooth_rand(1.5, 4, 0.3, 1) * np.sin(np.pi * t / 1.5)
+
+
+def sfx_elephant():
+    return voice(380, 820, 1.0, (500, 3500), rough=0.3) + filt(noise(1.0), "bandpass", [1000, 4000], 2) * 0.2
+
+
+def sfx_monkey():
+    return seq([(i * (0.18 - i * 0.02), voice(600, 1250, 0.1, (700, 3500))) for i in range(5)], 0.9)
+
+
+def sfx_snake_hiss():
+    return filt(noise(1.2), "highpass", 3000) * np.sin(np.pi * t_axis(1.2) / 1.2) ** 0.5
+
+
+def sfx_witch_cackle():
+    return reverb(seq([(i * 0.12, voice(950 - i * 40, 850 - i * 40, 0.09, (800, 3500))) for i in range(7)], 1.2), 0.8, 0.25)
+
+
+def sfx_evil_laugh():
+    return reverb(seq([(i * 0.22, voice(155 - i * 4, 135 - i * 4, 0.15, (200, 1500), rough=0.3)) for i in range(5)], 1.6), 1.5, 0.4)
+
+
+def sfx_giant_steps():
+    return seq([(i * 0.7, thump(50, 0.5) + rumble(0.5, 0.2) * 0.5) for i in range(3)], 2.3)
+
+
+def sfx_propeller():
+    t = t_axis(1.5)
+    saw = 2 * ((90 * t) % 1) - 1
+    return filt(saw, "lowpass", 1500, 2) * (0.6 + 0.4 * np.sin(2 * np.pi * 30 * t)) * np.sin(np.pi * t / 1.5)
+
+
+def sfx_old_man_grunt():
+    breath = filt(noise(0.7), "bandpass", [400, 1800], 2) * exp_env(0.7, 0.25) * 0.3
+    return voice(130, 100, 0.7, (200, 1500), rough=0.5) + breath
+
+
+def sfx_old_woman_sigh():
+    breath = filt(noise(0.8), "bandpass", [500, 2200], 2) * np.sin(np.pi * t_axis(0.8) / 0.8) * 0.4
+    return seq([(0, breath), (0.15, voice(360, 250, 0.6, (300, 2200)))], 0.9)
+
+
+def sfx_fanfare():
+    notes = [(523, 0.15), (659, 0.15), (784, 0.15), (1047, 0.55)]
+    parts, at = [], 0.0
+    for f, d in notes:
+        parts.append((at, voice(f, f, d, (400, 3500)) + voice(f / 2, f / 2, d, (200, 2000)) * 0.5))
+        at += d
+    return reverb(seq(parts, at + 0.3), 1.0, 0.25)
+
+
+def sfx_child_laugh():
+    return seq([(i * 0.15, voice(460 + 20 * (i % 2), 430, 0.1, (600, 3500))) for i in range(5)], 0.9)
 
 
 SFX = {name[4:]: fn for name, fn in globals().items() if name.startswith("sfx_")}

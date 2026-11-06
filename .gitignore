@@ -2,6 +2,7 @@ prototype/.venv/
 prototype/models/
 prototype/sounds/ambience/*.wav
 prototype/sounds/sfx/*.wav
+prototype/sounds/music/*.wav
 prototype/tests/wav/
 __pycache__/
 *.pyc

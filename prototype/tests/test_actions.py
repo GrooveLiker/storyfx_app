@@ -8,8 +8,8 @@ def sounds(decisions):
     return [d.sfx for d in decisions if d.sfx]
 
 
-def matcher(actions, clock, mode="dnd"):
-    return ActionMatcher(list(actions), embedder=None, mode=mode, clock=clock)
+def matcher(actions, clock):
+    return ActionMatcher(list(actions), embedder=None, clock=clock)
 
 
 def test_split_clauses():
@@ -68,12 +68,6 @@ def test_cooldown(actions, clock):
     assert "fall" not in sounds(m.process("орк упал на землю", 1, final=True))
     clock.advance(5)
     assert "fall" in sounds(m.process("орк упал на землю", 2, final=True))
-
-
-def test_kids_mode_skips_scary(actions, clock):
-    m = matcher(actions, clock, mode="kids")
-    assert "roar" not in sounds(m.process("дракон взревел", 0, final=True))
-    assert "explosion" not in sounds(m.process("раздался взрыв", 1, final=True))
 
 
 def test_false_friends(actions, clock):

@@ -8,34 +8,55 @@ from pathlib import Path
 from .asr import mic_events, stdin_lines, text_events, wav_events
 from .audio import NullAudio
 from .engine import StoryEngine
+from .characters import CharacterTracker, load_characters
+from .mixer import SoundMixer
+from .mood import load_moods, make_mood_tracker
 from .scenes import SceneTracker, load_scenes
 from .actions import ActionMatcher, load_actions
 
 
-def build_engine(mode: str, audio, use_embedder: bool = True, log=print) -> StoryEngine:
+MUSIC_TOGGLE = {"!музыка", "!music"}
+
+
+def build_engine(audio, use_embedder: bool = True, log=print, music: bool = True) -> StoryEngine:
+    import time
     embedder = None
     if use_embedder:
         from .scenes import RuBertEmbedder
         log("Загрузка модели смысла rubert-tiny2…")
         embedder = RuBertEmbedder()
     scenes, overlays = load_scenes()
+    moods, default = load_moods()
     return StoryEngine(
-        actions=ActionMatcher(load_actions(), embedder=embedder, mode=mode),
-        scenes=SceneTracker(scenes, overlays, embedder=embedder, mode=mode),
+        actions=ActionMatcher(load_actions(), embedder=embedder),
+        scenes=SceneTracker(scenes, overlays, embedder=embedder),
         audio=audio,
         log=log,
+        moods=make_mood_tracker(moods, default, embedder=embedder),
+        music_on=music,
+        characters=CharacterTracker(load_characters()),
+        mixer=SoundMixer(clock=time.monotonic, mood=default),
     )
+
+
+def with_music_toggle(lines, engine: StoryEngine):
+    """Строка «!музыка» в режиме --text включает/выключает музыку и дальше не передаётся."""
+    for line in lines:
+        if line.strip().lower() in MUSIC_TOGGLE:
+            engine.set_music_enabled(not engine.music_on)
+            continue
+        yield line
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="storyfx", description="Живая озвучка рассказа (прототип)")
-    ap.add_argument("--mode", choices=["dnd", "kids"], default="dnd", help="dnd — всё; kids — без страшных звуков")
-    src = ap.add_mutually_exclusive_group()
+    src =ap.add_mutually_exclusive_group()
     src.add_argument("--text", action="store_true", help="вводить текст с клавиатуры вместо микрофона")
     src.add_argument("--wav", type=Path, help="распознать WAV-файл (16 кГц, моно)")
     ap.add_argument("--fast", action="store_true", help="WAV/текст без пауз реального времени")
     ap.add_argument("--no-audio", action="store_true", help="не играть звук, только печатать события")
     ap.add_argument("--no-embed", action="store_true", help="сцены только по ключевым словам (без rubert-tiny2)")
+    ap.add_argument("--no-music", action="store_true", help="без фоновой музыки (в --text: «!музыка» — вкл/выкл)")
     ap.add_argument("--device", type=int, help="номер микрофона (см. --list-devices)")
     ap.add_argument("--list-devices", action="store_true")
     args = ap.parse_args(argv)
@@ -49,14 +70,15 @@ def main(argv: list[str] | None = None) -> int:
         audio = NullAudio()
     else:
         from .audio import PygameAudio
-        audio = PygameAudio(mode=args.mode)
+        audio = PygameAudio()
 
-    engine = build_engine(args.mode, audio, use_embedder=not args.no_embed)
+    engine = build_engine(audio, use_embedder=not args.no_embed, music=not args.no_music)
 
     if args.wav:
         events = wav_events(args.wav, realtime=not args.fast)
     elif args.text:
-        events = text_events(stdin_lines(), word_delay=0 if args.fast else 0.15)
+        print("Пишите текст; «!музыка» — включить/выключить музыку.")
+        events = text_events(with_music_toggle(stdin_lines(), engine), word_delay=0 if args.fast else 0.4)   # ≈ 2,5 сл/с — обычный темп рассказа
     else:
         print("Слушаю микрофон… (Ctrl+C — выход). Лучше в наушниках, чтобы микрофон не слышал звуки.")
         events = mic_events(args.device)

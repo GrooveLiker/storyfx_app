@@ -15,7 +15,9 @@
 
 Приложение слушает рассказчика (ведущий ДнД или родитель, читающий сказку) и в реальном времени включает:
 - **фон** — зацикленные звуки окружения (лес, дождь, таверна…), плавно сменяются;
-- **действия** — короткие звуки на события (удар меча, падение, заклинание), задержка < 0,5 с.
+- **персонажей** — голос при первом появлении (медведь — рык, старик — кряхтение), см. docs/characters.md;
+- **действия** — короткие звуки на события (удар меча, падение, заклинание), задержка < 0,5 с;
+- **музыку** (можно выключить) — синтетические петли по настроению рассказа: спокойная, весёлая, тревожная, динамичная.
 
 Целевой продукт — мобильное приложение (Flutter, позже). Сейчас — **прототип на ПК (Python)** для проверки идеи.
 
@@ -27,15 +29,17 @@ PROGRESS.md        — текущее состояние, задачи, след
 DECISIONS.md       — журнал решений (почему так, что отвергли)
 docs/architecture.md — устройство конвейера
 docs/sounds.md     — как добавлять звуки, действия (по смыслу) и сцены
+docs/fairytales.md — 100 сказок → места → какие фоны нужны (откуда список сцен)
+docs/characters.md — персонажи этих сказок → звук появления
 prototype/
   init.ps1         — установка окружения с нуля + быстрая проверка
   verify.ps1       — полная проверка (3 уровня)
   requirements.txt — зависимости с версиями
   src/storyfx/     — код: asr, actions, scenes, audio, engine, cli
-  data/            — actions.yaml (действия по смыслу), scenes.yaml
+  data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка)
   sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор с Freesound), LICENSES.md
   models/          — модель Vosk (скачивается init.ps1, не в git)
-  tools/           — gen_sounds.py (заглушки), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
+  tools/           — catalog.py (каталог звуков в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
   tests/           — pytest
 ```
 
@@ -43,12 +47,16 @@ prototype/
 
 ```powershell
 ./init.ps1                                   # один раз: venv, модели, звуки, быстрые тесты
-./.venv/Scripts/python -m storyfx --mode dnd # слушать микрофон
-./.venv/Scripts/python -m storyfx --mode kids --text   # печатать текст вместо речи
+./.venv/Scripts/python -m storyfx             # слушать микрофон
+./.venv/Scripts/python -m storyfx --text      # печатать текст вместо речи («!музыка» — вкл/выкл)
 ./.venv/Scripts/python -m storyfx --wav tests/wav/forest_dnd.wav --no-audio --fast  # прогнать WAV
 ```
 
-Из любой папки (корневой запускатель, те же аргументы): `D:\storyfx_app\run.cmd --mode dnd`
+Режимов нет: звукооператор сам подстраивает микс под рассказ — по смыслу и темпу речи (D-010).
+
+Из любой папки (корневой запускатель, те же аргументы): `D:\storyfx_app\run.cmd`
+
+Каталог звуков (послушать, выбрать, оставить): `D:\storyfx_app\run_catalog.cmd` → http://127.0.0.1:8765
 
 Совет: при работе с микрофоном используйте наушники — иначе микрофон слышит звуки приложения.
 

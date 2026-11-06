@@ -23,10 +23,28 @@ def test_actions_have_enough_examples(actions):
     assert not few, f"меньше 2 примеров: {few}"
 
 
-def test_every_sound_is_used(actions, scene_data):
-    used = {s for g in actions for s in g.sounds}
+def test_every_character_has_title(characters):
+    untitled = [c.id for c in characters if c.title == c.id]
+    assert not untitled, f"нет title (имени для людей) в characters.yaml: {untitled}"
+
+
+def test_every_character_has_sound(characters):
+    missing = [f"{c.id}:{c.sound}" for c in characters if not (config.SOUNDS_DIR / "sfx" / f"{c.sound}.wav").exists()]
+    assert not missing, f"нет sounds/sfx для персонажей: {missing}"
+
+
+def test_every_sound_is_used(actions, characters):
+    used = {s for g in actions for s in g.sounds} | {c.sound for c in characters}
     unused = [p.stem for p in (config.SOUNDS_DIR / "sfx").glob("*.wav") if p.stem not in used]
-    assert not unused, f"звуки не используются ни одной темой: {unused}"
+    assert not unused, f"звуки не используются ни темой действия, ни персонажем: {unused}"
+
+
+def test_every_sfx_has_freesound_query(actions, characters):
+    import yaml
+    q = yaml.safe_load((config.DATA_DIR / "freesound_queries.yaml").read_text(encoding="utf-8"))
+    used = {s for g in actions for s in g.sounds} | {c.sound for c in characters}
+    missing = sorted(used - set(q["sfx"]))
+    assert not missing, f"нет запросов Freesound для: {missing}"
 
 
 def test_every_scene_has_sound(scene_data):
@@ -47,8 +65,17 @@ def test_sounds_are_sane():
             assert len(x) / sr >= 8, f"{path.name}: фон короче 8 с"
 
 
+def test_every_mood_has_music(mood_data):
+    moods, default = mood_data
+    assert {m.id for m in moods} == {"calm", "cheerful", "tense", "action"} and default == "calm"
+    missing = [m.ambience for m in moods        # у настроения поле ambience = имя файла музыки
+               if not (config.SOUNDS_DIR / "music" / f"{m.ambience}.wav").exists()]
+    assert not missing, f"нет sounds/music для: {missing} — запустите tools/gen_music.py"
+
+
 def test_ambience_loops_without_click():
-    for path in sorted((config.SOUNDS_DIR / "ambience").glob("*.wav")):
+    loops = sorted((config.SOUNDS_DIR / "ambience").glob("*.wav")) + sorted((config.SOUNDS_DIR / "music").glob("*.wav"))
+    for path in loops:
         x, _ = _wav(path)
         jump = abs(x[-1] - x[0])
         typical = float(np.median(np.abs(np.diff(x)))) * 20 + 0.02

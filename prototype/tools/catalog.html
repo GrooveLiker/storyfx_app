@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Каталог звуков StoryFX</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --text: #1f1d1a; --muted: #6b665e; --line: #e4e0d8;
+    --accent: #2f6f5e; --accent-weak: #e3efe9; --warn: #9a5b12; --warn-weak: #f6ead9;
+    --stub: #8a3b3b; --stub-weak: #f5e3e3; --chip: #efece6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171614; --card: #211f1c; --text: #ece8e1; --muted: #a39d93; --line: #35322d;
+      --accent: #6cc0a5; --accent-weak: #1f3a31; --warn: #e2a95c; --warn-weak: #3a2d1b;
+      --stub: #e69a9a; --stub-weak: #3b2323; --chip: #2b2925;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line);
+           padding: 14px 16px 10px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  .progress { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+  .bar { flex: 1; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; max-width: 320px; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--line); background: var(--chip); color: var(--text); border-radius: 999px;
+          padding: 4px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  input[type=search] { flex: 1; min-width: 180px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line);
+                       background: var(--card); color: var(--text); font: inherit; }
+  main { padding: 16px; }
+  h2 { font-size: 15px; color: var(--muted); font-weight: 600; margin: 22px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .card.reviewed { border-color: var(--accent); }
+  .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sid { font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 15px; }
+  .badge { font-size: 12px; border-radius: 6px; padding: 1px 8px; }
+  .b-ok { background: var(--accent-weak); color: var(--accent); }
+  .b-todo { background: var(--warn-weak); color: var(--warn); }
+  .b-stub { background: var(--stub-weak); color: var(--stub); }
+  .used { color: var(--muted); font-size: 13px; margin: 4px 0 8px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: 0; }
+  .row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .meta { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .row.is-current { background: var(--accent-weak); border-radius: 8px; padding-left: 6px; padding-right: 6px; }
+  .now { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .now .label { color: var(--muted); font-size: 13px; }
+  button.play { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--chip);
+                color: var(--text); cursor: pointer; font-size: 13px; flex: none; }
+  button.play.playing { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  button.act { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 8px;
+               padding: 4px 12px; cursor: pointer; font: inherit; font-size: 13px; flex: none; }
+  button.act.primary { background: var(--accent); color: var(--bg); }
+  button.act:disabled { opacity: .5; cursor: default; }
+  a { color: var(--accent); }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 6px 0; }
+  .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg);
+           padding: 8px 14px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: .95; }
+  @media (max-width: 600px) { .row .meta { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Каталог звуков StoryFX</h1>
+    <div class="progress"><span id="progressText">Загрузка…</span><div class="bar"><div id="progressBar"></div></div></div>
+    <div class="controls">
+      <div class="chips" id="statusChips">
+        <button class="chip" data-status="all" aria-pressed="true">Все</button>
+        <button class="chip" data-status="todo" aria-pressed="false">Не проверены</button>
+        <button class="chip" data-status="done" aria-pressed="false">Проверены</button>
+        <button class="chip" data-status="stub" aria-pressed="false">Заглушки</button>
+      </div>
+      <input type="search" id="search" placeholder="Поиск: медведь, rain, таверна…">
+    </div>
+  </div>
+</header>
+<main class="wrap" id="list"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+const GROUPS = [["voice", "Голоса персонажей"], ["action", "Действия"], ["ambience", "Фоны и погода"]];
+let items = [], status = "all", query = "";
+const player = new Audio();
+let playingBtn = null;
+
+function groupOf(it) {
+  if (it.kind === "ambience") return "ambience";
+  const action = it.used_by.some(u => u.startsWith("действие"));
+  return action ? "action" : "voice";
+}
+
+function stopPlaying() {
+  player.pause();
+  if (playingBtn) { playingBtn.classList.remove("playing"); playingBtn.textContent = "▶"; }
+  playingBtn = null;
+}
+player.addEventListener("ended", stopPlaying);
+
+function play(btn, url) {
+  const same = playingBtn === btn;
+  stopPlaying();
+  if (same) return;
+  player.src = url + "?t=" + Date.now();      // без кэша: после выбора файл другой
+  player.play().catch(() => toast("Не удалось воспроизвести"));
+  btn.classList.add("playing"); btn.textContent = "■"; playingBtn = btn;
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+async function post(url, body) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+function replaceItem(updated) {
+  stopPlaying();          // карточки перерисуются — кнопка «■» иначе потеряется
+  items = items.map(i => i.key === updated.key ? updated : i);
+  render();
+}
+
+function el(tag, attrs = {}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of children) if (c != null) e.append(c);
+  return e;
+}
+
+function playButton(url, title) {
+  const b = el("button", { class: "play", title, "aria-label": title }, "▶");
+  b.addEventListener("click", () => play(b, url));
+  return b;
+}
+
+function card(it) {
+  const stub = !it.current;
+  const badge = it.reviewed ? el("span", { class: "badge b-ok" }, "✓ проверено")
+              : stub ? el("span", { class: "badge b-stub" }, "заглушка")
+              : el("span", { class: "badge b-todo" }, "не проверено");
+  const c = el("div", { class: "card" + (it.reviewed ? " reviewed" : "") },
+    el("div", { class: "head" }, el("span", { class: "sid" }, it.id), badge),
+    el("div", { class: "used" }, it.used_by.length ? it.used_by.join(" · ") : "нигде не используется"));
+
+  const now = el("div", { class: "now" },
+    el("span", { class: "label" }, "Сейчас:"),
+    it.has_file ? playButton(`/audio/current/${it.kind}/${it.id}.wav`, "Послушать текущий") : null,
+    el("span", {}, stub ? "синтетическая заглушка" : `${it.current.name} — ${it.current.username} `),
+    stub ? null : el("a", { href: it.current.url, target: "_blank", rel: "noopener" }, "Freesound ↗"));
+  const keep = el("button", { class: "act" + (it.reviewed ? "" : " primary") },
+    it.reviewed ? "Снять отметку" : "Оставить ✓");
+  keep.addEventListener("click", async () => {
+    try { replaceItem(await post("/api/review", { key: it.key, ok: !it.reviewed })); toast(it.reviewed ? "Отметка снята" : `${it.id}: оставлено`); }
+    catch (e) { toast(e.message); }
+  });
+  now.append(keep);
+  c.append(now);
+
+  const list = el("details", it.reviewed ? {} : { open: "" }, el("summary", {}, `Варианты с Freesound (${it.candidates.length})`));
+  if (!it.candidates.length) list.append(el("div", { class: "empty" }, "Вариантов нет — поправьте запросы в data/freesound_queries.yaml и запустите tools/fetch_freesound.py"));
+  for (const cand of it.candidates) {
+    const choose = el("button", { class: "act" }, cand.current ? "Выбран" : "Выбрать");
+    if (cand.current) choose.disabled = true;
+    choose.addEventListener("click", async () => {
+      try { stopPlaying(); replaceItem(await post("/api/pick", { key: it.key, n: cand.n })); toast(`${it.id}: выбран вариант ${cand.n}`); }
+      catch (e) { toast(e.message); }
+    });
+    list.append(el("div", { class: "row" + (cand.current ? " is-current" : "") },
+      playButton(`/audio/cand/${it.kind}/${it.id}/${encodeURIComponent(cand.file)}`, `Послушать вариант ${cand.n}`),
+      el("span", { class: "name", title: cand.name }, `${cand.n}. ${cand.name}`),
+      el("span", { class: "meta" }, `${cand.username} · ${cand.duration.toFixed(1)} с `),
+      el("a", { href: cand.url, target: "_blank", rel: "noopener", class: "meta" }, "↗"),
+      choose));
+  }
+  c.append(list);
+  return c;
+}
+
+function visible(it) {
+  if (status === "todo" && it.reviewed) return false;
+  if (status === "done" && !it.reviewed) return false;
+  if (status === "stub" && it.current) return false;
+  if (!query) return true;
+  const hay = (it.id + " " + it.used_by.join(" ") + " " + it.queries.join(" ")).toLowerCase();
+  return hay.includes(query);
+}
+
+function render() {
+  const done = items.filter(i => i.reviewed).length;
+  document.getElementById("progressText").textContent = `Проверено на слух: ${done} из ${items.length}`;
+  document.getElementById("progressBar").style.width = items.length ? (100 * done / items.length) + "%" : "0";
+  const list = document.getElementById("list");
+  list.replaceChildren();
+  for (const [g, title] of GROUPS) {
+    const its = items.filter(i => groupOf(i) === g && visible(i));
+    if (!its.length) continue;
+    list.append(el("h2", {}, `${title} · ${its.length}`));
+    its.forEach(i => list.append(card(i)));
+  }
+  if (!list.children.length) list.append(el("div", { class: "empty" }, "Ничего не найдено"));
+}
+
+document.getElementById("statusChips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  status = b.dataset.status;
+  document.querySelectorAll("#statusChips .chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+  render();
+});
+document.getElementById("search").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+
+fetch("/api/sounds").then(r => r.json()).then(d => { items = d; render(); })
+  .catch(() => document.getElementById("progressText").textContent = "Не удалось загрузить каталог — сервер запущен?");
+</script>
+</body>
+</html>

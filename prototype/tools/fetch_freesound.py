@@ -108,6 +108,8 @@ def meta_record(r: dict) -> dict:
 def fetch_candidates(fs: Freesound, kind: str, sid: str, spec: dict, count: int) -> int:
     folder = CANDIDATES / kind / sid
     folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.glob("*.wav"):      # перекачка (--force): старые кандидаты не смешиваем с новыми
+        old.unlink()
     seen, metas = set(), []
     for q in spec["queries"]:
         for r in rank(fs.search(q, spec["min"], spec["max"])):
@@ -157,6 +159,10 @@ def main() -> int:
         return 0
     only = set(args.only.split(",")) if args.only else None
     specs = yaml.safe_load(QUERIES.read_text(encoding="utf-8"))
+    if only:
+        unknown = only - set(specs["sfx"]) - set(specs["ambience"])
+        if unknown:
+            sys.exit(f"Нет таких звуков в {QUERIES.name}: {', '.join(sorted(unknown))}")
     total = 0
     for kind in ("sfx", "ambience"):
         for sid, spec in specs[kind].items():

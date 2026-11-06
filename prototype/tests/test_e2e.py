@@ -20,7 +20,7 @@ def embedder():
 def test_scenarios_text_with_embedder(actions, scene_data, scenarios, clock, embedder):
     errors = []
     for name, sc in scenarios.items():
-        eng = make_engine(sc["mode"], actions, scene_data, clock, embedder)
+        eng = make_engine(actions, scene_data, clock, embedder)
         feed_text(eng, sc["text"], clock)
         errors += check_expectations(name, sc, eng.events)
     assert not errors, "\n".join(errors)
@@ -73,6 +73,10 @@ def test_actions_by_meaning(actions, clock, embedder):
     ("корабль качало на волнах, солёные брызги летели на палубу", "sea"),
     ("с потолка капала вода, и каждый шаг отдавался гулким эхом в сыром туннеле", "cave"),
     ("за столами пили эль и громко смеялись, трактирщик протирал кружки", "tavern"),
+    # сказочные сцены (docs/fairytales.md) — фразы без ключевых слов сцены
+    ("старушка сидела у тёплой лежанки, тикали ходики, а кот мурлыкал на лавке", "home"),
+    ("с утра закукарекал петух, закудахтали куры и замычала бурёнка", "village"),
+    ("лягушки громко квакали, под ногами хлюпала вязкая жижа и пахло гнилью", "swamp"),
 ])
 def test_embedder_guesses_scene(scene_data, embedder, text, expected):
     from storyfx.scenes import SceneTracker
@@ -82,6 +86,65 @@ def test_embedder_guesses_scene(scene_data, embedder, text, expected):
     t.evaluate()
     best = max(t.last_scores, key=t.last_scores.get)
     assert best == expected, f"{best} вместо {expected}: {sorted(t.last_scores.items(), key=lambda kv: -kv[1])[:3]}"
+
+
+FAIRYTALE_SCENE_CASES = {   # фразы не взяты из описаний сцен; порог низкий — модель смысла маленькая
+    "village": ["бабка вышла кормить кур, а у плетня залаял пёс", "мужик запряг лошадь в телегу и поехал по селу",
+                "у колодца собрались бабы с вёдрами, гуси щипали траву", "дед пошёл в хлев доить корову",
+                "поросёнок вырвался из загона и побежал по огороду"],
+    "home": ["дед с бабкой сидели на лавке у окна и пили чай", "мышка пробежала по полу и юркнула под лавку",
+             "козлята заперли дверь и сидели тихо", "бабушка вязала носки у тёплой лежанки"],
+    "swamp": ["царевич брёл по кочкам, под ногами чавкала вода", "цапля стояла на одной ноге среди осоки",
+              "лягушка сидела на листе кувшинки"],
+}
+
+
+def test_fairytale_scene_accuracy(scene_data, embedder):
+    from storyfx.scenes import SceneTracker
+    scenes, overlays = scene_data
+    misses, n = [], 0
+    for want, phrases in FAIRYTALE_SCENE_CASES.items():
+        for p in phrases:
+            t = SceneTracker(list(scenes), list(overlays), embedder=embedder)
+            t._words = p.split()
+            t.evaluate()
+            best = max(t.last_scores, key=t.last_scores.get)
+            n += 1
+            if best != want:
+                misses.append(f"{p!r}: {best} вместо {want}")
+    acc = 1 - len(misses) / n
+    print(f"сказочные сцены: {acc:.0%}")
+    assert acc >= 0.75, "\n".join([f"точность {acc:.0%}"] + misses)
+
+
+MOOD_CASES = {   # фразы не из описаний moods.yaml; почти без ключевых слов настроения
+    "calm": ["солнце садилось, старик сидел на завалинке и смотрел на закат", "кот дремал на печке, бабушка вязала",
+             "путники брели по тропинке, никуда не торопясь", "река медленно несла свои воды"],
+    "cheerful": ["зайчата кувыркались на траве и хохотали", "гости пели песни и хлопали в ладоши",
+                 "колобок катился и весело распевал свою песенку", "дети водили хоровод вокруг ёлки"],
+    "tense": ["в чаще завыл волк, и у Маши задрожали коленки", "дверь медленно со скрипом отворилась, а за ней никого",
+              "из темноты на них смотрели два горящих глаза", "что-то зашуршало в кустах, и все замерли"],
+    "action": ["богатырь вскочил на коня и поскакал наперерез врагу", "волк бросился вдогонку, а заяц петлял между деревьями",
+               "меч сверкнул, и чудище рухнуло", "Иван схватил перо жар-птицы и кинулся бежать"],
+}
+
+
+def test_mood_accuracy(mood_data, embedder):
+    from storyfx.mood import make_mood_tracker
+    moods, default = mood_data
+    misses, n = [], 0
+    for want, phrases in MOOD_CASES.items():
+        for p in phrases:
+            t = make_mood_tracker(moods, default, embedder=embedder)
+            t._words = p.split()
+            t.evaluate()
+            best = max(t.last_scores, key=t.last_scores.get)
+            n += 1
+            if best != want:
+                misses.append(f"{p!r}: {best} вместо {want}")
+    acc = 1 - len(misses) / n
+    print(f"настроение: {acc:.0%}")
+    assert acc >= 0.75, "\n".join([f"точность {acc:.0%}"] + misses)
 
 
 def test_scene_eval_is_fast(scene_data, embedder):
@@ -105,7 +168,7 @@ def test_wav_through_vosk(actions, scene_data, scenarios, clock, embedder):
         pytest.fail(f"нет тестовых WAV {missing} — запустите tools/make_test_wavs.py")
     errors, transcripts = [], []
     for name, sc in scenarios.items():
-        eng = make_engine(sc["mode"], actions, scene_data, clock, embedder)
+        eng = make_engine(actions, scene_data, clock, embedder)
         finals = []
         for ev in wav_events(WAV_DIR / f"{name}.wav", realtime=False):
             clock.advance(0.1)

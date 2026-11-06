@@ -38,7 +38,6 @@ class Scene:
     ambience: str
     descriptions: list[str]
     keywords: list[Pattern]
-    scary: bool = False
     centroid: np.ndarray | None = None
 
 
@@ -48,19 +47,18 @@ class Overlay:
     ambience: str
     keywords: list[Pattern]
     stop: list[Pattern]
-    scary: bool = False
 
 
 def load_scenes(path: Path = config.DATA_DIR / "scenes.yaml") -> tuple[list[Scene], list[Overlay]]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     scenes = [
         Scene(sid, s["ambience"], list(s.get("descriptions", [])),
-              [parse_pattern(k) for k in s.get("keywords", [])], bool(s.get("scary", False)))
+              [parse_pattern(k) for k in s.get("keywords", [])])
         for sid, s in raw["scenes"].items()
     ]
     overlays = [
         Overlay(oid, o["ambience"], [parse_pattern(k) for k in o.get("keywords", [])],
-                [parse_pattern(k) for k in o.get("stop", [])], bool(o.get("scary", False)))
+                [parse_pattern(k) for k in o.get("stop", [])])
         for oid, o in raw.get("overlays", {}).items()
     ]
     return scenes, overlays
@@ -82,7 +80,6 @@ class SceneTracker:
     scenes: list[Scene]
     overlays: list[Overlay]
     embedder: Embedder | None = None
-    mode: str = "dnd"
     current: str | None = None
     active_overlays: list[str] = field(default_factory=list)
     _words: list[str] = field(default_factory=list)
@@ -91,9 +88,6 @@ class SceneTracker:
     last_scores: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
-        if self.mode == "kids":
-            self.scenes = [s for s in self.scenes if not s.scary]
-            self.overlays = [o for o in self.overlays if not o.scary]
         if self.embedder is not None:
             for s in self.scenes:
                 if s.descriptions:

@@ -39,6 +39,18 @@ def test_process_ambience_loop():
     assert abs(y[-1] - y[0]) < 0.05                          # стык петли непрерывный
 
 
+def test_level_lifts_peaky_sound():
+    """Треск костра: редкие резкие щелчки на тихом фоне — громкость поднимается, пики не выше потолка."""
+    rng = np.random.default_rng(1)
+    x = rng.standard_normal(44100 * 12) * 0.002
+    x[rng.integers(0, len(x), 20)] = 0.9
+    y = sp._level(x, *sp.AMB_LEVEL)
+    rms = float(np.sqrt(np.mean(y ** 2)))
+    by_peak = float(np.sqrt(np.mean((x * sp.AMB_LEVEL[1] / 0.9) ** 2)))   # старое поведение: пик упёрся в потолок
+    assert np.max(np.abs(y)) <= sp.AMB_LEVEL[1] + 1e-6
+    assert rms > 1.5 * by_peak
+
+
 def test_ambience_too_short():
     with pytest.raises(ValueError):
         sp.process_ambience(np.zeros(5 * SR), cut=20)

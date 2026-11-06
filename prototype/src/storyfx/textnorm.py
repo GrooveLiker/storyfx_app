@@ -58,8 +58,14 @@ class Pattern:
 
 def parse_pattern(phrase: str) -> Pattern:
     words = []
-    for raw in normalize(phrase).split():
-        if raw.endswith("*"):
+    for raw in phrase.split():
+        exact = raw.startswith("=")          # «=ворона» — только это слово («вороной» конь — не ворона)
+        raw = normalize(raw.lstrip("="))
+        if not raw:
+            continue
+        if exact:
+            words.append(PatternWord("word", raw))
+        elif raw.endswith("*"):
             words.append(PatternWord("prefix", raw[:-1]))
         else:
             s = stem(raw)
