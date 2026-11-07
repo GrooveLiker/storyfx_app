@@ -1,2 +1,16 @@
 # Звуки, проверенные владельцем на слух в каталоге (tools/catalog.py)
-{}
+sfx/bear_growl: true
+sfx/cat_meow: true
+sfx/child_laugh: true
+sfx/cow_moo: true
+sfx/dog_bark: true
+sfx/duck_quack: true
+sfx/evil_laugh: true
+sfx/fanfare: true
+sfx/fox_yelp: true
+sfx/frog_croak: true
+sfx/goose_honk: true
+sfx/insect_buzz: true
+sfx/mouse_squeak: true
+sfx/rooster: true
+sfx/witch_cackle: true

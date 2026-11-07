@@ -114,10 +114,10 @@ sfx/arrow:
   url: https://freesound.org/people/plantmonkey/sounds/410751/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/bear_growl:
-  id: 763026
-  name: Bear Angry Growl
-  username: celldroid
-  url: https://freesound.org/people/celldroid/sounds/763026/
+  id: 410343
+  name: Roar.wav
+  username: waxsocks
+  url: https://freesound.org/people/waxsocks/sounds/410343/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/bell:
   id: 633208
@@ -132,16 +132,16 @@ sfx/bird:
   url: https://freesound.org/people/danlucaz/sounds/517736/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/cat_meow:
-  id: 110011
-  name: cat meow
-  username: tuberatanka
-  url: https://freesound.org/people/tuberatanka/sounds/110011/
+  id: 732520
+  name: Young Cat Meow
+  username: Lukey1028
+  url: https://freesound.org/people/Lukey1028/sounds/732520/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/child_laugh:
-  id: 184616
-  name: Young Female Child Laughing
-  username: kim.headlee
-  url: https://freesound.org/people/kim.headlee/sounds/184616/
+  id: 616088
+  name: Child's laugh 1 - medyk3D.wav
+  username: medyk3D
+  url: https://freesound.org/people/medyk3D/sounds/616088/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/coins:
   id: 211447
@@ -150,10 +150,10 @@ sfx/coins:
   url: https://freesound.org/people/FlatHill/sounds/211447/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/cow_moo:
-  id: 700378
-  name: Moo 1 - Moo Moo the Cow
-  username: manofham
-  url: https://freesound.org/people/manofham/sounds/700378/
+  id: 59245
+  name: z-moo01.wav
+  username: Zozzy
+  url: https://freesound.org/people/Zozzy/sounds/59245/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/crow_caw:
   id: 741366
@@ -186,10 +186,10 @@ sfx/door_knock:
   url: https://freesound.org/people/Ligidium/sounds/193827/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/duck_quack:
-  id: 418509
-  name: single quack from a duck
-  username: Mikes-MultiMedia
-  url: https://freesound.org/people/Mikes-MultiMedia/sounds/418509/
+  id: 558858
+  name: Duck quacking.mp3
+  username: DigPro120
+  url: https://freesound.org/people/DigPro120/sounds/558858/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/elephant:
   id: 527845
@@ -216,10 +216,10 @@ sfx/fall:
   url: https://freesound.org/people/leonelmail/sounds/504626/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/fanfare:
-  id: 350428
-  name: Trumpet Fanfare
-  username: bevibeldesign
-  url: https://freesound.org/people/bevibeldesign/sounds/350428/
+  id: 397355
+  name: Tada Fanfare A
+  username: plasterbrain
+  url: https://freesound.org/people/plasterbrain/sounds/397355/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/fireball:
   id: 867421
@@ -240,10 +240,10 @@ sfx/fox_yelp:
   url: https://freesound.org/people/Setzilla/sounds/173208/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/frog_croak:
-  id: 354132
-  name: Frog croaking sound effect
-  username: betterchinese
-  url: https://freesound.org/people/betterchinese/sounds/354132/
+  id: 361117
+  name: frog_quak.mp3
+  username: katzlbt
+  url: https://freesound.org/people/katzlbt/sounds/361117/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/giant_steps:
   id: 531725
@@ -258,16 +258,16 @@ sfx/goat_bleat:
   url: https://freesound.org/people/Kinoton/sounds/581240/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/goose_honk:
-  id: 805297
-  name: goose honk
-  username: jahjahjahjah
-  url: https://freesound.org/people/jahjahjahjah/sounds/805297/
+  id: 510945
+  name: Water Birds - 5.wav
+  username: SpaceJoe
+  url: https://freesound.org/people/SpaceJoe/sounds/510945/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/hare_hop:
-  id: 396013
-  name: Rustling Grass 2.wav
-  username: morganpurkis
-  url: https://freesound.org/people/morganpurkis/sounds/396013/
+  id: 364712
+  name: Rustling Grass
+  username: alegemaate
+  url: https://freesound.org/people/alegemaate/sounds/364712/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/heal:
   id: 876169
@@ -372,10 +372,10 @@ sfx/roar:
   url: https://freesound.org/people/999999990/sounds/320345/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/rooster:
-  id: 435508
-  name: Rooster Crow 1
+  id: 435506
+  name: Rooster Crow 3
   username: BenjaminNelan
-  url: https://freesound.org/people/BenjaminNelan/sounds/435508/
+  url: https://freesound.org/people/BenjaminNelan/sounds/435506/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/snake_hiss:
   id: 553374
@@ -414,10 +414,10 @@ sfx/whistle:
   url: https://freesound.org/people/pbimal/sounds/534607/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/witch_cackle:
-  id: 701358
-  name: witch cackle
-  username: ImATaco
-  url: https://freesound.org/people/ImATaco/sounds/701358/
+  id: 348142
+  name: Witch's Laugh.wav
+  username: NikoMyth
+  url: https://freesound.org/people/NikoMyth/sounds/348142/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/wolf_howl:
   id: 398430

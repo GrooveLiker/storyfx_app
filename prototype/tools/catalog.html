@@ -47,6 +47,17 @@
   .who { font-weight: 600; flex: 0 1 auto; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fname { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sumrow .badge { flex: none; }
+  .card.muted .who, .card.muted .fname { opacity: .55; text-decoration: line-through; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+  .searchrow { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0; }
+  .searchrow .q { flex: 1; min-width: 200px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line);
+                  background: var(--bg); color: var(--text); font: inherit; }
+  .searchrow select { padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card);
+                      color: var(--text); font: inherit; }
+  .job { font-size: 13px; margin: 4px 0; }
+  .job.running { color: var(--warn); }
+  .job.done { color: var(--accent); }
+  .job.error { color: var(--stub); }
   .sid { font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 15px; }
   .badge { font-size: 12px; border-radius: 6px; padding: 1px 8px; }
   .b-ok { background: var(--accent-weak); color: var(--accent); }
@@ -268,13 +279,88 @@ function toggleCard(key) {
   render();
 }
 
+// ---------- «Найти другие», «Свой файл», «Не нужен» ----------
+const searchOpen = new Set();
+const watching = new Set();
+
+function watchJob(key) {
+  /** Поиск на Freesound идёт в фоне — спрашиваем сервер, пока не закончится. */
+  if (watching.has(key)) return;
+  watching.add(key);
+  const tick = async () => {
+    try {
+      const it = await (await fetch(`/api/item?key=${encodeURIComponent(key)}`)).json();
+      if (it.job && it.job.state === "running") { setTimeout(tick, 1500); return; }
+      watching.delete(key);
+      replaceItem(it);
+      if (it.job) toast(`${it.id}: ${it.job.msg}`);
+    } catch (e) { watching.delete(key); }
+  };
+  setTimeout(tick, 1500);
+}
+
+function tools(it) {
+  const row = el("div", { class: "tools" });
+  const running = it.job && it.job.state === "running";
+
+  const findBtn = el("button", { class: "act" + (searchOpen.has(it.key) ? " on" : "") }, "🔍 Найти другие");
+  findBtn.addEventListener("click", () => { searchOpen.has(it.key) ? searchOpen.delete(it.key) : searchOpen.add(it.key); render(); });
+
+  const file = el("input", { type: "file", accept: "audio/*,.wav,.mp3,.ogg,.flac,.m4a", hidden: "" });
+  const upBtn = el("button", { class: "act" }, "⬆ Свой файл");
+  upBtn.title = "WAV, MP3, OGG… — обработается как звук с Freesound и сразу встанет";
+  upBtn.addEventListener("click", () => file.click());
+  file.addEventListener("change", async () => {
+    const f = file.files[0]; if (!f) return;
+    upBtn.disabled = true; upBtn.textContent = "загружаю…";
+    try {
+      const r = await fetch(`/api/upload?key=${encodeURIComponent(it.key)}&name=${encodeURIComponent(f.name)}`,
+                            { method: "POST", body: f });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || r.statusText);
+      replaceItem(d); toast(`${it.id}: своя запись поставлена`);
+    } catch (e) { toast(e.message); upBtn.disabled = false; upBtn.textContent = "⬆ Свой файл"; }
+  });
+
+  const muteBtn = el("button", { class: "act danger" }, it.muted ? "🔊 Вернуть звук" : "🔇 Не нужен");
+  muteBtn.title = it.muted ? "Снова включить этот звук" : "Выключить: распознаётся, но не звучит. Можно вернуть";
+  muteBtn.addEventListener("click", async () => {
+    try { replaceItem(await post("/api/mute", { key: it.key, on: !it.muted })); toast(it.muted ? `${it.id}: звук возвращён` : `${it.id}: звук выключен`); }
+    catch (e) { toast(e.message); }
+  });
+  row.append(findBtn, upBtn, file, muteBtn);
+
+  const wrap = el("div", {}, row);
+  if (searchOpen.has(it.key) || running) {
+    const q = el("input", { type: "text", class: "q", value: it.queries.join(", "),
+                            placeholder: "bear growl, grizzly roar", "aria-label": "Запросы к Freesound через запятую" });
+    const count = el("select", { "aria-label": "Сколько вариантов" },
+      el("option", { value: "5" }, "5 вариантов"), el("option", { value: "10" }, "10 вариантов"));
+    const go = el("button", { class: "act primary" }, running ? "ищу…" : "Искать");
+    if (running) { go.disabled = true; q.disabled = true; }
+    go.addEventListener("click", async () => {
+      const queries = q.value.split(",").map(s => s.trim()).filter(Boolean);
+      if (!queries.length) { toast("Напишите хотя бы один запрос"); return; }
+      try { replaceItem(await post("/api/search", { key: it.key, queries, count: +count.value })); }
+      catch (e) { toast(e.message); }
+    });
+    q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
+    wrap.append(el("div", { class: "searchrow" }, q, count, go),
+      el("div", { class: "note" }, "Запросы по-английски, коротко, через запятую: «bear growl, grizzly». Старые варианты заменятся, только если что-то найдётся; удачные запросы сохранятся."));
+  }
+  if (it.job) wrap.append(el("div", { class: "job " + it.job.state }, it.job.msg));
+  return wrap;
+}
+
 function card(it) {
   const stub = !it.current;
   const open = expanded.has(it.key);
-  const badge = it.reviewed ? el("span", { class: "badge b-ok" }, "✓")
+  const badge = it.muted ? el("span", { class: "badge b-stub" }, "🔇 выключен")
+              : it.reviewed ? el("span", { class: "badge b-ok" }, "✓")
               : stub ? el("span", { class: "badge b-stub" }, "заглушка")
               : el("span", { class: "badge b-todo" }, "не проверено");
-  if (it.reviewed) badge.title = "проверено на слух";
+  if (it.reviewed && !it.muted) badge.title = "проверено на слух";
+  if (it.muted) badge.title = "звук выключен: распознаётся, но не звучит";
   const summary = el("div", { class: "sumrow", role: "button", tabindex: "0", "aria-expanded": String(open),
                               title: open ? "Свернуть" : "Развернуть" },
     el("span", { class: "chev" }, open ? "▾" : "▸"),
@@ -284,7 +370,8 @@ function card(it) {
     it.has_file ? playButton(`/audio/current/${it.kind}/${it.id}.wav`, "Послушать текущий") : null);
   summary.addEventListener("click", e => { if (!e.target.closest("button")) toggleCard(it.key); });
   summary.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCard(it.key); } });
-  const c = el("div", { class: "card" + (it.reviewed ? " reviewed" : "") + (open ? "" : " collapsed") }, summary);
+  const c = el("div", { class: "card" + (it.reviewed ? " reviewed" : "") + (open ? "" : " collapsed") + (it.muted ? " muted" : "") }, summary);
+  if (it.job && it.job.state === "running") watchJob(it.key);
   if (!open) return c;
 
   c.append(el("div", { class: "used" }, el("span", { class: "sid" }, `${it.id}.wav`), " · ",
@@ -292,8 +379,8 @@ function card(it) {
 
   const now = el("div", { class: "now" },
     el("span", { class: "label" }, "Сейчас:"),
-    el("span", {}, stub ? "синтетическая заглушка" : `${it.current.name} — ${it.current.username} `),
-    stub ? null : el("a", { href: it.current.url, target: "_blank", rel: "noopener" }, "Freesound ↗"));
+    el("span", {}, stub ? "синтетическая заглушка" : it.own ? `своя запись: ${it.current.name} ` : `${it.current.name} — ${it.current.username} `),
+    stub || it.own ? null : el("a", { href: it.current.url, target: "_blank", rel: "noopener" }, "Freesound ↗"));
   const keep = el("button", { class: "act" + (it.reviewed ? "" : " primary") },
     it.reviewed ? "Снять отметку" : "Оставить ✓");
   keep.addEventListener("click", async () => {
@@ -301,10 +388,10 @@ function card(it) {
     catch (e) { toast(e.message); }
   });
   now.append(keep);
-  c.append(now);
+  c.append(now, tools(it));
 
   const list = el("details", { open: "" }, el("summary", {}, `Варианты с Freesound (${it.candidates.length})`));
-  if (!it.candidates.length) list.append(el("div", { class: "empty" }, "Вариантов нет — поправьте запросы в data/freesound_queries.yaml и запустите tools/fetch_freesound.py"));
+  if (!it.candidates.length) list.append(el("div", { class: "empty" }, "Вариантов нет — нажмите «🔍 Найти другие» или загрузите «⬆ Свой файл»"));
   for (const cand of it.candidates) {
     const choose = el("button", { class: "act" }, cand.current ? "Выбран" : "Выбрать");
     if (cand.current) choose.disabled = true;

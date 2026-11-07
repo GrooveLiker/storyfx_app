@@ -24,7 +24,8 @@ CANDIDATES = ROOT / "sounds" / "candidates"
 CHOSEN = ROOT / "sounds" / "chosen.yaml"
 LICENSES = ROOT / "sounds" / "LICENSES.md"
 
-HELP = "  номер — прослушать · «+» — выбрать последний прослушанный · Enter — дальше без выбора · q — выход"
+OWN_LICENSE = "own"         # своя запись владельца (каталог → «Свой файл»)
+HELP ="  номер — прослушать · «+» — выбрать последний прослушанный · Enter — дальше без выбора · q — выход"
 
 
 def load_chosen() -> dict:
@@ -37,14 +38,18 @@ def save_chosen(chosen: dict) -> None:
         + yaml.safe_dump(dict(sorted(chosen.items())), allow_unicode=True, sort_keys=False),
         encoding="utf-8",
     )
-    rows = "\n".join(
-        f"| {k}.wav | {c['url']} | {c['username']} | CC0 1.0 | обрезка, громкость{', петля' if k.startswith('ambience') else ''} |"
-        for k, c in sorted(chosen.items())
-    )
+    def row(k, c):
+        changes = f"обрезка, громкость{', петля' if k.startswith('ambience') else ''}"
+        if c.get("license") == OWN_LICENSE:
+            return f"| {k}.wav | своя запись: sounds/own/{k.replace('/', '__')}.wav | {c['username']} | своя | {changes} |"
+        return f"| {k}.wav | {c['url']} | {c['username']} | CC0 1.0 | {changes} |"
+
+    rows = "\n".join(row(k, c) for k, c in sorted(chosen.items()))
     LICENSES.write_text(
         "# Лицензии звуков\n\n"
         "Файлы, не перечисленные ниже, синтезированы `tools/gen_sounds.py` — собственная работа проекта.\n"
-        "Внешние звуки — только CC0 (общественное достояние, указание автора не требуется, но мы указываем).\n\n"
+        "Внешние звуки — только CC0 (общественное достояние, указание автора не требуется, но мы указываем).\n"
+        "«Своя запись» — файл владельца, загруженный в каталоге звуков; оригинал хранится в sounds/own/.\n\n"
         "| Файл | Источник | Автор | Лицензия | Изменения |\n|---|---|---|---|---|\n" + rows + "\n",
         encoding="utf-8",
     )
@@ -53,6 +58,10 @@ def save_chosen(chosen: dict) -> None:
 def install(kind: str, sid: str, cand: dict, chosen: dict) -> None:
     src = CANDIDATES / kind / sid / cand["file"]
     shutil.copyfile(src, ROOT / "sounds" / kind / f"{sid}.wav")
+    if cand.get("license") == OWN_LICENSE:          # своя запись: копия в git — не потеряется на другом ПК
+        own = ROOT / "sounds" / "own"
+        own.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, own / f"{kind}__{sid}.wav")
     chosen[f"{kind}/{sid}"] = {k: cand[k] for k in ("id", "name", "username", "url", "license")}
     save_chosen(chosen)
     print(f"  ✓ {kind}/{sid} ← {cand['name']} ({cand['username']})")

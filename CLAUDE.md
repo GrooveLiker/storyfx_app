@@ -6,7 +6,7 @@
 2. **Голос не сохраняется.** Аудио с микрофона не пишется на диск и никуда не отправляется. Исключение — тестовые WAV, синтезированные TTS.
 3. **Готово = проверено.** Задача считается сделанной только после прохождения команд из раздела «Проверка». «Код написан» ≠ «готово».
 4. **WIP = 1.** Одна активная задача из [PROGRESS.md](PROGRESS.md). Не расширять объём без записи в PROGRESS.md.
-5. **Звуки — только с понятной лицензией** (CC0 / свои / синтезированные). Внешние — через `tools/fetch_freesound.py` (проверяет CC0) + `tools/pick_sounds.py` (пишет `sounds/chosen.yaml` и `LICENSES.md`). Ключ API — только в `prototype/.freesound_key`, не в коде и не в git.
+5. **Звуки — только с понятной лицензией** (CC0 / свои / синтезированные). Внешние — через `tools/fetch_freesound.py` (проверяет CC0) + `tools/pick_sounds.py` или каталог `tools/catalog.py` (пишут `sounds/chosen.yaml` и `LICENSES.md`; свои записи — в `sounds/own/`). Ключ API — только в `prototype/.freesound_key`, не в коде и не в git.
 6. **Данные отдельно от кода.** Триггеры и сцены — в `prototype/data/*.yaml`, не хардкодить слова в Python.
 7. **Обновлять документы в том же изменении**, что меняет поведение (CLAUDE.md, PROGRESS.md, docs/).
 8. Платформа разработки — Windows 10, PowerShell. Python 3.11, виртуальное окружение `prototype/.venv`.
@@ -36,8 +36,8 @@ prototype/
   verify.ps1       — полная проверка (3 уровня)
   requirements.txt — зависимости с версиями
   src/storyfx/     — код: три звена (D-011) — asr (слух) → наблюдатели actions/scenes/characters/mood → world (модель мира) → engine+mixer+audio (звукорежиссёр)
-  data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка)
-  sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор с Freesound), LICENSES.md
+  data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка), muted.yaml (выключенные звуки)
+  sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор), LICENSES.md, own/ (свои записи, в git)
   models/          — модель Vosk (скачивается init.ps1, не в git)
   tools/           — catalog.py + live_session.py (каталог звуков и тест озвучки в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
   tests/           — pytest

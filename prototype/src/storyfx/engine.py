@@ -29,6 +29,7 @@ class StoryEngine:
     characters: CharacterTracker | None = None      # звук персонажа при появлении (storyfx/characters.py)
     mixer: SoundMixer | None = None                 # звукооператор: напряжённость → громкость слоёв (mixer.py)
     world: WorldState | None = None                 # модель мира (world.py); создаётся сама
+    muted: set[str] = field(default_factory=set)    # выключенные звуки «kind/id» (data/muted.yaml)
     _said_intensity: float = -1.0
     _action_in_utt: bool = False                    # в текущей фразе уже прозвучал звук действия
     _utt: int = 0
@@ -123,28 +124,38 @@ class StoryEngine:
                 self._direct(self.world.set_mood(c.id, c.reason))
 
     # ---------- звено 3: звукорежиссёр — изменения мира → звук ----------
+    def _play(self, sfx: str) -> bool:
+        """Короткий звук, если он не выключен в каталоге («Не нужен»)."""
+        if f"sfx/{sfx}" in self.muted:
+            return False
+        self.audio.play_sfx(sfx)
+        return True
+
+    def _ambience(self, amb: str | None) -> str | None:
+        return None if amb and f"ambience/{amb}" in self.muted else amb
+
     def _direct(self, changes: list[WorldChange]) -> None:
         weather_changed = False
         for c in changes:
             if c.kind == "action":
-                self.audio.play_sfx(c.id)
+                played = self._play(c.id)
                 self._action_in_utt = True
                 self.events.append(("sfx", c.id))
-                self._say(f"ДЕЙСТВИЕ {c.id:<12} ← {c.reason}")
+                self._say(f"ДЕЙСТВИЕ {c.id:<12} ← {c.reason}{'' if played else ' — звук выключен'}")
             elif c.kind == "enter":
                 ch = next(x for x in self.characters.characters if x.id == c.id)
                 if self._action_in_utt:
                     # «волк завыл»: звук действия уже есть — второй звук того же момента будет кашей
                     self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (в фразе уже был звук действия)")
                     continue
-                self.audio.play_sfx(ch.sound)
+                played = self._play(ch.sound)
                 self.events.append(("char", c.id))
-                self._say(f"ПЕРСОНАЖ {c.id:<12} ← «{c.word}» ({ch.sound})")
+                self._say(f"ПЕРСОНАЖ {c.id:<12} ← «{c.word}» ({ch.sound}{'' if played else ', звук выключен'})")
             elif c.kind == "leave":
                 self.events.append(("leave", c.id))
                 self._say(f"УШЁЛ     {c.id:<12} ← «{c.word}»")
             elif c.kind == "place":
-                self.audio.set_scene(self.scenes.ambience_for(c.id))
+                self.audio.set_scene(self._ambience(self.scenes.ambience_for(c.id)))
                 self.events.append(("scene", c.id))
                 self._say(f"СЦЕНА    {c.id:<12} ({c.reason})")
             elif c.kind in ("weather_on", "weather_off"):
@@ -158,4 +169,4 @@ class StoryEngine:
                 if self.music_on:
                     self.audio.set_music(self.moods.ambience_for(c.id))
         if weather_changed:
-            self.audio.set_overlays([self.scenes.overlay_ambience(o) for o in self.world.weather])
+            self.audio.set_overlays([a for o in self.world.weather if (a := self._ambience(self.scenes.overlay_ambience(o)))])

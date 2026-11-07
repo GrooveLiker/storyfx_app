@@ -4,17 +4,22 @@
   python tools/catalog.py            # http://127.0.0.1:8765 (откроется в браузере)
   python tools/catalog.py --port 9000 --no-browser
 
-Работает только на этом компьютере (127.0.0.1), в сеть ничего не отправляет.
+Сервер доступен только с этого компьютера (127.0.0.1). В интернет ходит одна кнопка — «Найти другие»:
+поиск на Freesound, как tools/fetch_freesound.py (инструмент разработчика, CLAUDE.md правило 5).
 Выбор пишет то же, что pick_sounds.py: sounds/<kind>/<id>.wav, sounds/chosen.yaml, sounds/LICENSES.md.
 «Оставить» — отметка в sounds/reviewed.yaml (прогресс проверки на слух).
-Запущенное приложение перечитывает звук только при перезапуске.
+«Свой файл» — запись владельца: обработка как у Freesound, копия в sounds/own/ (в git), лицензия «своя».
+«Не нужен» — звук выключен (data/muted.yaml), распознавание остаётся; «Вернуть» — включить.
+Запущенное приложение перечитывает звук только при перезапуске (тест озвучки — сразу).
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+import tempfile
 import threading
+import time
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,11 +29,14 @@ from urllib.parse import parse_qs, unquote, urlparse
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import fetch_freesound as ff  # noqa: E402
 import pick_sounds as ps  # noqa: E402
 from live_session import LiveSession  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+from storyfx import muted as mt  # noqa: E402
+from storyfx import soundproc as sp  # noqa: E402
 from storyfx.actions import load_actions  # noqa: E402
 from storyfx.characters import load_characters  # noqa: E402
 from storyfx.scenes import load_scenes  # noqa: E402
@@ -36,6 +44,9 @@ from storyfx.scenes import load_scenes  # noqa: E402
 PAGE = Path(__file__).resolve().parent / "catalog.html"
 QUERIES = ROOT / "data" / "freesound_queries.yaml"
 KINDS = ("sfx", "ambience")
+MAX_UPLOAD = 25 * 1024 * 1024          # своя запись — не больше 25 МБ
+UPLOAD_TYPES = {".wav", ".mp3", ".ogg", ".flac", ".m4a", ".aiff", ".aif"}
+JOBS: dict[str, dict] = {}             # «Найти другие» в фоне: key → {"state": running|done|error, "msg": …}
 
 
 def reviewed_path() -> Path:
@@ -78,7 +89,7 @@ def usage() -> dict[str, list[str]]:
 def catalog() -> list[dict]:
     """Все звуки из freesound_queries.yaml с текущим выбором, вариантами и отметкой «проверено»."""
     q = yaml.safe_load(QUERIES.read_text(encoding="utf-8"))
-    chosen, rev, use = ps.load_chosen(), load_reviewed(), usage()
+    chosen, rev, use, muted = ps.load_chosen(), load_reviewed(), usage(), mt.load_muted()
     items = []
     for kind in KINDS:
         for sid in q[kind]:
@@ -94,6 +105,9 @@ def catalog() -> list[dict]:
                             if cur else None),
                 "has_file": (ps.ROOT / "sounds" / kind / f"{sid}.wav").exists(),
                 "reviewed": bool(rev.get(key)),
+                "muted": key in muted,
+                "own": bool(cur and cur.get("license") == ps.OWN_LICENSE),
+                "job": JOBS.get(key),
                 "candidates": [{"n": c["n"], "name": c["name"], "username": c["username"],
                                 "duration": c["duration"], "url": c["url"], "file": c["file"],
                                 "freesound_id": c["id"], "current": bool(cur and cur["id"] == c["id"])}
@@ -135,6 +149,92 @@ def mark(key: str, ok: bool) -> dict:
     return next(i for i in catalog() if i["key"] == key)
 
 
+def item(key: str) -> dict:
+    return next(i for i in catalog() if i["key"] == key)
+
+
+def set_muted(key: str, on: bool) -> dict:
+    """«Не нужен» / «Вернуть»: звук выключается без удаления данных."""
+    if not find(key):
+        raise ValueError(f"нет такого звука: {key}")
+    muted = mt.load_muted()
+    (muted.add if on else muted.discard)(key)
+    mt.save_muted(muted)
+    return item(key)
+
+
+def _spec(kind: str, sid: str) -> dict:
+    return yaml.safe_load(QUERIES.read_text(encoding="utf-8"))[kind][sid]
+
+
+def search(key: str, queries: list[str], count: int = 5, wait: bool = False) -> dict:
+    """«Найти другие»: свои запросы → новые варианты с Freesound (в фоне). Удачные запросы сохраняются."""
+    loc = find(key)
+    queries = [q.strip() for q in queries if q.strip()][:6]
+    if not loc or not queries:
+        raise ValueError("нужен звук и хотя бы один запрос")
+    if (JOBS.get(key) or {}).get("state") == "running":
+        raise ValueError("поиск уже идёт")
+    kind, sid = loc
+    spec = {**_spec(kind, sid), "queries": queries}
+    JOBS[key] = {"state": "running", "msg": f"ищу на Freesound: {', '.join(queries)}…"}
+
+    def job():
+        try:
+            got = ff.fetch_candidates(ff.Freesound(ff.api_key()), kind, sid, spec, max(1, min(int(count), 10)))
+            if got:
+                ff.set_queries(kind, sid, queries, QUERIES)
+                JOBS[key] = {"state": "done", "msg": f"новых вариантов: {got}. Запросы сохранены."}
+            else:
+                JOBS[key] = {"state": "error", "msg": "ничего не нашлось — попробуйте другие слова (по-английски, коротко)"}
+        except SystemExit as e:               # api_key(): нет ключа
+            JOBS[key] = {"state": "error", "msg": str(e)}
+        except Exception as e:                # сеть, лимит API, ffmpeg
+            JOBS[key] = {"state": "error", "msg": f"ошибка: {e}"}
+
+    t = threading.Thread(target=job, daemon=True)
+    t.start()
+    if wait:
+        t.join()
+    return item(key)
+
+
+def upload(key: str, filename: str, data: bytes) -> dict:
+    """«Свой файл»: обработать как звук с Freesound, добавить вариантом и сразу поставить."""
+    loc = find(key)
+    if not loc:
+        raise ValueError(f"нет такого звука: {key}")
+    ext = Path(filename).suffix.lower()
+    if ext not in UPLOAD_TYPES:
+        raise ValueError(f"нужен аудиофайл ({', '.join(sorted(UPLOAD_TYPES))})")
+    if not data or len(data) > MAX_UPLOAD:
+        raise ValueError("файл пустой или больше 25 МБ")
+    kind, sid = loc
+    spec = _spec(kind, sid)
+    with tempfile.TemporaryDirectory() as td:
+        src = Path(td) / f"upload{ext}"
+        src.write_bytes(data)
+        try:
+            x = sp.decode(src)
+        except Exception as e:
+            raise ValueError(f"не удалось прочитать файл: {e}") from e
+    if len(x) < sp.SR * 0.1:
+        raise ValueError("слишком короткая запись")
+    y = sp.process_ambience(x, spec["cut"]) if kind == "ambience" else sp.process_sfx(x, spec["cut"])
+    folder = ps.CANDIDATES / kind / sid
+    folder.mkdir(parents=True, exist_ok=True)
+    meta_path = folder / "meta.json"
+    metas = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else []
+    n = max([m["n"] for m in metas], default=0) + 1
+    own_id = f"own-{int(time.time())}"
+    wav = folder / f"{n}_{own_id}.wav"
+    sp.write_wav(wav, y)
+    metas.append({"n": n, "file": wav.name, "query": "свой файл", "id": own_id, "name": Path(filename).name,
+                  "username": "владелец", "license": ps.OWN_LICENSE, "duration": round(len(x) / sp.SR, 1), "url": ""})
+    meta_path.write_text(json.dumps(metas, ensure_ascii=False, indent=1), encoding="utf-8")
+    return pick(key, n)
+
+
 def audio_path(url_path: str) -> Path | None:
     """/audio/current/sfx/owl.wav → sounds/sfx/owl.wav; /audio/cand/sfx/owl/1_123.wav → кандидат.
     Только .wav внутри своих папок — никаких «../»."""
@@ -174,6 +274,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
         if path == "/api/sounds":
             return self._json(catalog())
+        if path == "/api/item":                     # опрос «Найти другие», пока идёт поиск
+            key = parse_qs(urlparse(self.path).query).get("key", [""])[0]
+            if not find(key):
+                return self._json({"error": "нет такого звука"}, HTTPStatus.NOT_FOUND)
+            return self._json(item(key))
         if path == "/api/live/state":
             since = parse_qs(urlparse(self.path).query).get("since", ["0"])[0]
             return self._json(self.session.state(int(since) if since.isdigit() else 0))
@@ -185,15 +290,30 @@ class Handler(BaseHTTPRequestHandler):
         self._json({"error": "нет такой страницы"}, HTTPStatus.NOT_FOUND)
 
     def do_POST(self):
-        path = urlparse(self.path).path
+        url = urlparse(self.path)
+        path = url.path
         try:
-            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+            size = int(self.headers.get("Content-Length", 0))
+            if path == "/api/upload":                  # тело — сам файл; key и name — в адресе
+                if size > MAX_UPLOAD:
+                    raise ValueError("файл больше 25 МБ")
+                qs = parse_qs(url.query)
+                it = upload(qs.get("key", [""])[0], qs.get("name", [""])[0], self.rfile.read(size))
+                self.session.sound_changed()
+                return self._json(it)
+            body = json.loads(self.rfile.read(size) or b"{}")
             if path == "/api/pick":
-                item = pick(body["key"], int(body["n"]))
+                it = pick(body["key"], int(body["n"]))
                 self.session.sound_changed()          # тест озвучки возьмёт новый файл
-                return self._json(item)
+                return self._json(it)
             if path == "/api/review":
                 return self._json(mark(body["key"], bool(body["ok"])))
+            if path == "/api/mute":
+                it = set_muted(body["key"], bool(body["on"]))
+                self.session.muted_changed()
+                return self._json(it)
+            if path == "/api/search":
+                return self._json(search(body["key"], list(body["queries"]), int(body.get("count", 5))))
             s = self.session
             if path == "/api/live/start":
                 s.ensure_engine()

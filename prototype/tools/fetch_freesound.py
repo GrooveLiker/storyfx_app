@@ -16,6 +16,8 @@ import argparse
 import json
 import math
 import os
+import re
+import shutil
 import sys
 import tempfile
 import time
@@ -106,10 +108,24 @@ def meta_record(r: dict) -> dict:
 
 
 def fetch_candidates(fs: Freesound, kind: str, sid: str, spec: dict, count: int) -> int:
+    """Скачать до count вариантов. Старые варианты заменяются, только если нашлось хоть что-то:
+    неудачный поиск не оставит без вариантов."""
     folder = CANDIDATES / kind / sid
-    folder.mkdir(parents=True, exist_ok=True)
-    for old in folder.glob("*.wav"):      # перекачка (--force): старые кандидаты не смешиваем с новыми
-        old.unlink()
+    new = folder / "_new"
+    if new.exists():
+        shutil.rmtree(new)
+    new.mkdir(parents=True)
+    got = _download_candidates(fs, kind, spec, count, new)
+    if got:
+        for old in list(folder.glob("*.wav")) + list(folder.glob("meta.json")):
+            old.unlink()
+        for f in new.iterdir():
+            f.replace(folder / f.name)
+    shutil.rmtree(new)
+    return got
+
+
+def _download_candidates(fs: Freesound, kind: str, spec: dict, count: int, folder: Path) -> int:
     seen, metas = set(), []
     for q in spec["queries"]:
         for r in rank(fs.search(q, spec["min"], spec["max"])):
@@ -132,8 +148,26 @@ def fetch_candidates(fs: Freesound, kind: str, sid: str, spec: dict, count: int)
             print(f"    {n}. {r['name'][:60]} — {r['username']} ({r['duration']:.1f} с)")
         if len(metas) >= count:
             break
-    (folder / "meta.json").write_text(json.dumps(metas, ensure_ascii=False, indent=1), encoding="utf-8")
+    if metas:
+        (folder / "meta.json").write_text(json.dumps(metas, ensure_ascii=False, indent=1), encoding="utf-8")
     return len(metas)
+
+
+def set_queries(kind: str, sid: str, queries: list[str], path: Path = QUERIES) -> None:
+    """Записать новые запросы одного звука в freesound_queries.yaml, не трогая комментарии и другие строки."""
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    section, done = None, False
+    q = json.dumps(queries, ensure_ascii=False)
+    for i, line in enumerate(lines):
+        if re.match(r"^(sfx|ambience):", line):
+            section = line.split(":")[0]
+        elif section == kind and re.match(rf"^  {re.escape(sid)}:\s*\{{", line):
+            lines[i], n = re.subn(r"queries:\s*\[[^\]]*\]", lambda _: f"queries: {q}", line, count=1)
+            done = n == 1
+            break
+    if not done:
+        raise ValueError(f"нет строки {kind}/{sid} в {path.name}")
+    path.write_text("".join(lines), encoding="utf-8")
 
 
 def fetch_chosen(fs: Freesound) -> None:
@@ -142,6 +176,11 @@ def fetch_chosen(fs: Freesound) -> None:
     for key, c in chosen.items():
         kind, sid = key.split("/")
         out = ROOT / "sounds" / kind / f"{sid}.wav"
+        if c.get("license") == "own":         # своя запись: хранится в git, sounds/own/
+            own = ROOT / "sounds" / "own" / f"{kind}__{sid}.wav"
+            print(f"{key}: своя запись {own.name}")
+            shutil.copyfile(own, out)
+            continue
         print(f"{key}: freesound #{c['id']}")
         prepare(fs.sound(c["id"]), kind, specs[kind][sid], out)
 

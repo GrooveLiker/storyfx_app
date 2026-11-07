@@ -10,6 +10,7 @@ from .audio import NullAudio
 from .engine import StoryEngine
 from .characters import CharacterTracker, load_characters
 from .mixer import SoundMixer
+from .muted import load_muted
 from .mood import load_moods, make_mood_tracker
 from .scenes import SceneTracker, load_scenes
 from .actions import ActionMatcher, load_actions
@@ -36,6 +37,7 @@ def build_engine(audio, use_embedder: bool = True, log=print, music: bool = True
         music_on=music,
         characters=CharacterTracker(load_characters()),
         mixer=SoundMixer(clock=time.monotonic, mood=default),
+        muted=load_muted(),
     )
 
 

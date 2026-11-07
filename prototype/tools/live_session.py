@@ -196,6 +196,13 @@ class LiveSession:
             if cache is not None:
                 cache.clear()
 
+    def muted_changed(self) -> None:
+        """В каталоге нажали «Не нужен» / «Вернуть» — тест озвучки сразу слушается нового списка."""
+        from storyfx.muted import load_muted
+        with self._lock:
+            if self.engine is not None:
+                self.engine.muted = load_muted()
+
     def state(self, since: int = 0) -> dict:
         with self._lock:
             e = self.engine
