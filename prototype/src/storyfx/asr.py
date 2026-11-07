@@ -22,28 +22,41 @@ class TextEvent:
 class VoskStream:
     """Превращает поток PCM 16 кГц моно в частичные/финальные результаты."""
 
-    def __init__(self, model_dir: Path = config.VOSK_MODEL_DIR, sample_rate: int = config.SAMPLE_RATE):
+    def __init__(self, model_dir: Path = config.VOSK_MODEL_DIR, sample_rate: int = config.SAMPLE_RATE,
+                 word_times: bool = False):
         import vosk
         vosk.SetLogLevel(-1)
         if not model_dir.exists():
             raise FileNotFoundError(f"нет модели Vosk: {model_dir}. Запустите init.ps1")
         self.rec = vosk.KaldiRecognizer(vosk.Model(str(model_dir)), sample_rate)
+        if word_times:
+            self.rec.SetWords(True)     # для теста задержки: когда каждое слово закончилось
+        self.last_words: list[dict] = []   # [{"word", "start", "end"}] последней финальной фразы
         self._last_partial = ""
+        self._quiet_blocks = 0
 
     def feed(self, pcm: bytes) -> Iterator[TextEvent]:
         if self.rec.AcceptWaveform(pcm):
-            text = json.loads(self.rec.Result()).get("text", "")
+            res = json.loads(self.rec.Result())
+            text = res.get("text", "")
+            self.last_words = res.get("result", [])
             self._last_partial = ""
             if text:
                 yield TextEvent(text, True)
         else:
             partial = json.loads(self.rec.PartialResult()).get("partial", "")
-            if partial and partial != self._last_partial:
+            self._quiet_blocks += 1
+            # Новый текст — сразу. Тот же текст — повторяем раз в PARTIAL_PULSE_BLOCKS («пульс»):
+            # рассказчик замолчал после «…ухнула сова», а движку надо заметить, что срок решения вышел (D-011).
+            if partial and (partial != self._last_partial or self._quiet_blocks >= config.PARTIAL_PULSE_BLOCKS):
                 self._last_partial = partial
+                self._quiet_blocks = 0
                 yield TextEvent(partial, False)
 
     def flush(self) -> Iterator[TextEvent]:
-        text = json.loads(self.rec.FinalResult()).get("text", "")
+        res = json.loads(self.rec.FinalResult())
+        text = res.get("text", "")
+        self.last_words = res.get("result", [])
         if text:
             yield TextEvent(text, True)
 

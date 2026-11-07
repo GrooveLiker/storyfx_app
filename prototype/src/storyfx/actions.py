@@ -131,6 +131,7 @@ class ActionMatcher:
     _seen: set[tuple[int, int, str]] = field(default_factory=set)    # (фраза, начало части, тема)
     _last_fired: dict[str, float] = field(default_factory=dict)
     _clf: dict[str, object] = field(default_factory=dict)
+    _first_seen: dict[tuple, float] = field(default_factory=dict)   # (фраза, часть, тема, якорь) → когда услышали
 
     def __post_init__(self):
         if self.embedder is not None:
@@ -174,17 +175,33 @@ class ActionMatcher:
                 # Ждём контекст: фраза закончилась, началось следующее событие темы или набралось N слов.
                 # Последние слова частичного результата Vosk ещё может переписать — отсюда запас.
                 ready = final or k + 1 < len(anchored) or len(tokens) - 1 >= anchors[-1] + config.CONTEXT_AFTER
-                if not ready:
-                    continue
-                self._seen.add(key)
                 lo = max(start, anchors[0] - config.CONTEXT_BEFORE)
                 ctx_tokens = tokens[lo: hi + 1]
                 ctx = " ".join(t.word for t in ctx_tokens)
+                negated = any(is_negated(tokens, a) for a in anchors)
+                label = conf = None
+                if not ready:
+                    # D-011: звук ≤ 1 с. Чем дольше ждём, тем меньше уверенности нужно, чтобы решить:
+                    # до SOFT — только ясный смысл (ранний выстрел), потом SOFT_CONF, после HARD — обычный минимум.
+                    # отсчёт — от последнего якоря: «ударил … мечом» — новое слово темы, новая информация
+                    waited = now - self._first_seen.setdefault((*key, anchors[-1]), now)
+                    if negated or tokens[-1].word in config.PENDING_WORDS:
+                        continue        # «дракон так и …» — дальше может быть «не зарычал»
+                    if waited < config.ACTION_SOFT_DEADLINE_S and len(tokens) - 1 <= anchors[-1]:
+                        continue        # рано, и после якоря ещё ни слова
+                    label, conf = self.classify(g, ctx)
+                    need = (config.ACTION_EARLY_CONF if waited < config.ACTION_SOFT_DEADLINE_S
+                            else config.ACTION_SOFT_CONF if waited < config.ACTION_HARD_DEADLINE_S
+                            else config.ACTION_MIN_CONF)
+                    if (label == NONE and waited < config.ACTION_HARD_DEADLINE_S) or (label != NONE and conf < need):
+                        continue
+                self._seen.add(key)
                 # отрицание относится к якорю: «не зарычал», «дождя нет»; «орк упал и не встал» — звук нужен
-                if any(is_negated(tokens, a) for a in anchors):
+                if negated:
                     decisions.append(Decision(g.id, None, 1.0, ctx, "отрицание"))
                     continue
-                label, conf = self.classify(g, ctx)
+                if label is None:
+                    label, conf = self.classify(g, ctx)
                 variant = next((v for v in g.variants if v.id == label), None)
                 if label == NONE or variant is None:
                     decisions.append(Decision(g.id, None, conf, ctx, "по смыслу без звука"))
@@ -197,4 +214,5 @@ class ActionMatcher:
                     decisions.append(Decision(g.id, label, conf, ctx))
         if final:
             self._seen = {k for k in self._seen if k[0] != utterance_id}
+            self._first_seen = {k: v for k, v in self._first_seen.items() if k[0] != utterance_id}
         return decisions

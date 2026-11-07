@@ -142,6 +142,9 @@ class SceneTracker:
     def _set(self, scene_id: str) -> None:
         self.current = scene_id
         self._candidate, self._candidate_hits = None, 0
+        # Перешли в новое место — слова о прежнем месте больше не голосуют (иначе «…в деревне… пошли в лес…»
+        # возвращало деревню: её ключевое слово ещё в окне). D-011.
+        self._words = self._words[-config.SCENE_KEEP_AFTER_SWITCH:]
 
     def _embed(self, text: str) -> np.ndarray | None:
         return self.embedder.encode([text])[0] if self.embedder is not None else None

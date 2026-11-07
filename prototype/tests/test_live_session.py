@@ -45,6 +45,7 @@ def test_text_drives_engine(session):
     wait(lambda: not session.state()["busy"])
     st = session.state()
     assert st["status"] == "ready" and st["scene"] == "forest" and "rain" in st["overlays"]
+    assert st["on_stage"] == ["Лиса"]                                       # имя для людей, из модели мира
     events = session.engine.events
     assert ("char", "fox") in events
     assert any("ПЕРСОНАЖ fox" in l["text"] for l in st["lines"])

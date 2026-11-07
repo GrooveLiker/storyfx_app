@@ -172,11 +172,10 @@ class LiveSession:
             e.audio.set_music(None)
             e.scenes.current, e.scenes.active_overlays, e.scenes._words = None, [], []
             e.scenes._candidate, e.scenes._candidate_hits = None, 0
+            e.world.reset()                          # место, погода, кто на сцене
             if e.moods:
                 e.moods._words, e.moods._candidate, e.moods._candidate_hits = [], None, 0
-                e.moods.current = _default_mood()
-            if e.characters:
-                e.characters._last_seen.clear()
+                e.moods.current = e.world.mood = _default_mood()
             e.actions._last_fired.clear()
             if e.mixer:
                 from storyfx.mixer import SoundMixer
@@ -204,14 +203,21 @@ class LiveSession:
                 "status": self.status, "error": self.error,
                 "busy": self._busy or not self._texts.empty(), "listening": self.listening,
                 "partial": self.partial,
-                "scene": e.scenes.current if e else None,
-                "overlays": list(e.scenes.active_overlays) if e else [],
+                "scene": e.world.place if e else None,
+                "overlays": list(e.world.weather) if e else [],
+                "on_stage": _titles(e, e.world.on_stage()) if e else [],
                 "mood": e.mood if e else None,
                 "intensity": round(e.mixer.intensity, 2) if e and e.mixer else None,
                 "music_on": bool(e and e.music_on),
                 "lines": [{"n": n, "text": t} for n, t in self._lines if n > since],
                 "last": self._seq,
             }
+
+
+def _titles(engine, ids: list[str]) -> list[str]:
+    """Кто на сцене — именами для людей («Баба-яга»), а не id."""
+    by_id = {c.id: c.title for c in engine.characters.characters} if engine.characters else {}
+    return [by_id.get(i, i) for i in ids]
 
 
 def _default_mood() -> str:

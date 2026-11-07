@@ -159,6 +159,61 @@ def test_scene_eval_is_fast(scene_data, embedder):
     assert per_call < 0.2, f"оценка сцены {per_call * 1000:.0f} мс — слишком медленно"
 
 
+def test_place_does_not_revert(actions, scene_data, clock, embedder):
+    """D-011: ушли из деревни в лес — слова о деревне больше не тянут сцену назад (раньше откатывалось)."""
+    eng = make_engine(actions, scene_data, clock, embedder)
+    feed_text(eng, "Жили-были дед да баба в деревне. Испекла баба колобок и положила на окошко. "
+                   "Покатился колобок в лес. А медведя в лесу не было. Колобок катился дальше по тропинке.", clock)
+    scenes = [i for k, i in eng.events if k == "scene"]
+    assert scenes[:2] == ["village", "forest"] and eng.world.place == "forest", scenes
+
+
+def test_action_latency(actions, scene_data, scenarios, clock, embedder):
+    """D-011: звук действия — не позже 1 с от конца слова-якоря (по времени в записи, Vosk включён)."""
+    import wave
+
+    from storyfx.asr import VoskStream
+    from storyfx.audio import NullAudio
+    from storyfx.textnorm import find_matches, tokenize
+
+    class TimedAudio(NullAudio):
+        def play_sfx(self, sfx):
+            super().play_sfx(sfx)
+            self.played.append((sfx, clock()))
+
+    topics = {v.id: g.topic for g in actions for v in g.variants}
+    worst, report = 0.0, []
+    for name in scenarios:
+        eng = make_engine(actions, scene_data, clock, embedder)       # без персонажей: меряем только действия
+        eng.audio = TimedAudio()
+        eng.audio.played = []
+        t_start, words = clock(), []
+        stream = VoskStream(word_times=True)
+        with wave.open(str(WAV_DIR / f"{name}.wav"), "rb") as w:
+            block = int(config.SAMPLE_RATE * config.BLOCK_SECONDS)
+            while data := w.readframes(block):
+                clock.advance(len(data) / 2 / config.SAMPLE_RATE)    # время в записи
+                for ev in stream.feed(data):
+                    eng.on_text(ev)
+                    if ev.final:
+                        words += stream.last_words
+            for ev in stream.flush():
+                eng.on_text(ev)
+                words += stream.last_words
+        toks = tokenize(" ".join(wd["word"] for wd in words))
+        for sfx, t_play in eng.audio.played:
+            ends = [words[m.end]["end"] for p in topics.get(sfx, []) for m in find_matches(p, toks)
+                    if words[m.end]["end"] <= t_play - t_start + 0.05]
+            if not ends:
+                continue
+            lat = (t_play - t_start) - max(ends)
+            worst = max(worst, lat)
+            report.append(f"{name}: {sfx} {lat:.2f} с")
+    print("\n".join(["задержка действий:"] + report + [f"худшая: {worst:.2f} с"]))
+    assert report, "ни одного звука действия — проверьте сценарии"
+    assert worst <= 1.0, "\n".join(report)
+
+
 def test_wav_through_vosk(actions, scene_data, scenarios, clock, embedder):
     from storyfx.asr import wav_events
     if not config.VOSK_MODEL_DIR.exists():

@@ -166,6 +166,7 @@
       <div><span class="label">Сцена</span><b id="stScene">—</b></div>
       <div><span class="label">Погода и время</span><b id="stOverlays">—</b></div>
       <div><span class="label">Настроение</span><b id="stMood">—</b></div>
+      <div class="wide"><span class="label">На сцене</span><b id="stStage">—</b></div>
       <div class="wide"><span class="label">Напряжение (звукооператор)</span>
         <div class="bar tension"><div id="stTension"></div></div></div>
     </div>
@@ -409,7 +410,7 @@ document.getElementById("stopBtn").addEventListener("click", () => post("/api/li
 function kindOf(line) {
   if (/СЦЕНА|СЛОЙ/.test(line)) return "k-scene";
   if (/ДЕЙСТВИЕ/.test(line)) return "k-sfx";
-  if (/ПЕРСОНАЖ/.test(line)) return "k-char";
+  if (/ПЕРСОНАЖ|УШЁЛ/.test(line)) return "k-char";
   if (/НАСТРОЕНИЕ|МУЗЫКА|ЗВУКООПЕРАТОР/.test(line)) return "k-mood";
   if (/ тише |фраза:/.test(line)) return "k-quiet";
   return "";
@@ -422,6 +423,7 @@ function applyState(s) {
   document.getElementById("stScene").textContent = SCENES[s.scene] || "—";
   document.getElementById("stOverlays").textContent = s.overlays.map(o => OVERLAYS[o] || o).join(", ") || "—";
   document.getElementById("stMood").textContent = MOODS[s.mood] || "—";
+  document.getElementById("stStage").textContent = (s.on_stage || []).join(" · ") || "никого";   // в именах уже есть запятые: «Дед, старик»
   document.getElementById("stTension").style.width = ((s.intensity ?? 0) * 100) + "%";
   document.getElementById("stPartial").textContent = s.partial ? "слышу: " + s.partial : "";
   const mic = document.getElementById("micBtn");
