@@ -48,7 +48,9 @@ class VoskStream:
             yield TextEvent(text, True)
 
 
-def mic_events(device: int | None = None) -> Iterator[TextEvent]:
+def mic_events(device: int | None = None, stop=None) -> Iterator[TextEvent]:
+    """Микрофон → Vosk. Звук только в памяти, на диск не пишется (CLAUDE.md, правило 2).
+    stop — threading.Event: установили — дочитываем фразу и выходим (кнопка «Стоп» в каталоге)."""
     import sounddevice as sd
     q: queue.Queue[bytes] = queue.Queue()
 
@@ -59,8 +61,13 @@ def mic_events(device: int | None = None) -> Iterator[TextEvent]:
     block = int(config.SAMPLE_RATE * config.BLOCK_SECONDS)
     with sd.RawInputStream(samplerate=config.SAMPLE_RATE, blocksize=block, dtype="int16",
                            channels=1, device=device, callback=cb):
-        while True:
-            yield from stream.feed(q.get())
+        while stop is None or not stop.is_set():
+            try:
+                pcm = q.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            yield from stream.feed(pcm)
+    yield from stream.flush()
 
 
 def wav_events(path: Path, realtime: bool = True) -> Iterator[TextEvent]:

@@ -39,7 +39,7 @@ prototype/
   data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка)
   sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор с Freesound), LICENSES.md
   models/          — модель Vosk (скачивается init.ps1, не в git)
-  tools/           — catalog.py (каталог звуков в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
+  tools/           — catalog.py + live_session.py (каталог звуков и тест озвучки в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
   tests/           — pytest
 ```
 
@@ -56,7 +56,7 @@ prototype/
 
 Из любой папки (корневой запускатель, те же аргументы): `D:\storyfx_app\run.cmd`
 
-Каталог звуков (послушать, выбрать, оставить): `D:\storyfx_app\run_catalog.cmd` → http://127.0.0.1:8765
+Каталог звуков и тест озвучки (послушать, выбрать, оставить; текст или диктовка → звук): `D:\storyfx_app\run_catalog.cmd` → http://127.0.0.1:8765
 
 Совет: при работе с микрофоном используйте наушники — иначе микрофон слышит звуки приложения.
 

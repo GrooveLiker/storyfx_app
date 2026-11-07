@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Каталог звуков StoryFX</title>
+<title>StoryFX — звуки</title>
 <style>
   :root {
     --bg: #f6f5f2; --card: #ffffff; --text: #1f1d1a; --muted: #6b665e; --line: #e4e0d8;
@@ -39,6 +39,14 @@
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
   .card.reviewed { border-color: var(--accent); }
   .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .card.collapsed { padding: 6px 10px; margin-bottom: 6px; }
+  .sumrow { display: flex; align-items: center; gap: 10px; cursor: pointer; min-width: 0; border-radius: 8px; }
+  .sumrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .card:not(.collapsed) .sumrow { padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+  .chev { color: var(--muted); width: 12px; flex: none; }
+  .who { font-weight: 600; flex: 0 1 auto; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fname { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sumrow .badge { flex: none; }
   .sid { font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 15px; }
   .badge { font-size: 12px; border-radius: 6px; padding: 1px 8px; }
   .b-ok { background: var(--accent-weak); color: var(--accent); }
@@ -66,12 +74,49 @@
            padding: 8px 14px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .toast.show { opacity: .95; }
   @media (max-width: 600px) { .row .meta { display: none; } }
+  .titlebar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+  .titlebar h1 { margin: 0; }
+  .tabs { display: flex; gap: 4px; }
+  .tab { border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 600; padding: 6px 12px;
+         border-radius: 8px; cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+  .live { padding: 16px; }
+  .label { color: var(--muted); font-size: 13px; }
+  textarea { width: 100%; margin: 6px 0 8px; padding: 10px; border-radius: 8px; border: 1px solid var(--line);
+             background: var(--bg); color: var(--text); font: inherit; resize: vertical; }
+  .examples, .liverow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .spacer { flex: 1; }
+  button.act.danger { border-color: var(--stub); color: var(--stub); }
+  button.act.on { background: var(--accent); color: var(--bg); }
+  .note { color: var(--muted); font-size: 12px; }
+  .statusgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .statusgrid > div { display: flex; flex-direction: column; gap: 2px; }
+  .statusgrid .wide { grid-column: 1 / -1; }
+  .bar.tension { max-width: none; height: 10px; }
+  .bar.tension > div { background: linear-gradient(90deg, var(--accent), var(--warn)); }
+  .partial { margin-top: 8px; min-height: 1.4em; color: var(--muted); font-style: italic; }
+  .log { font-family: ui-monospace, Consolas, monospace; font-size: 13px; max-height: 340px; overflow-y: auto;
+         margin-top: 6px; white-space: pre-wrap; }
+  .log div { padding: 1px 0; }
+  .log .k-scene { color: var(--accent); font-weight: 600; }
+  .log .k-sfx { color: var(--warn); font-weight: 600; }
+  .log .k-char { color: #7a4fb5; font-weight: 600; }
+  .log .k-mood { color: #2f6aa8; }
+  .log .k-quiet { color: var(--muted); }
+  @media (prefers-color-scheme: dark) { .log .k-char { color: #c4a2ee; } .log .k-mood { color: #8ab8ea; } }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <h1>Каталог звуков StoryFX</h1>
+    <div class="titlebar">
+      <h1>StoryFX</h1>
+      <nav class="tabs" id="tabs">
+        <button class="tab" data-tab="live" aria-selected="true">Тест озвучки</button>
+        <button class="tab" data-tab="catalog" aria-selected="false">Каталог звуков</button>
+      </nav>
+    </div>
+    <div id="catalogHead" hidden>
     <div class="progress"><span id="progressText">Загрузка…</span><div class="bar"><div id="progressBar"></div></div></div>
     <div class="controls">
       <div class="chips" id="statusChips">
@@ -81,10 +126,59 @@
         <button class="chip" data-status="stub" aria-pressed="false">Заглушки</button>
       </div>
       <input type="search" id="search" placeholder="Поиск: медведь, rain, таверна…">
+      <button class="chip" id="expandAll" title="Развернуть все видимые плашки">Развернуть все</button>
+      <button class="chip" id="collapseAll" title="Свернуть все плашки">Свернуть все</button>
+    </div>
     </div>
   </div>
 </header>
-<main class="wrap" id="list"></main>
+
+<section class="wrap live" id="live">
+  <div class="card">
+    <label for="story" class="label">Текст рассказа — фразы через точку или с новой строки</label>
+    <textarea id="story" rows="5" placeholder="Жили-были дед да баба в деревне. Испекла баба колобок…"></textarea>
+    <div class="examples">
+      <span class="label">Примеры:</span>
+      <button class="chip" data-example="kolobok">Колобок</button>
+      <button class="chip" data-example="chase">Погоня</button>
+      <button class="chip" data-example="tavern">Таверна и гроза</button>
+      <button class="chip" data-example="sea">Море и дракон</button>
+    </div>
+    <div class="liverow">
+      <div class="chips" id="tempoChips" title="Темп подачи текста — звукооператор его слышит">
+        <span class="label">Темп:</span>
+        <button class="chip" data-tempo="slow" aria-pressed="false">спокойно</button>
+        <button class="chip" data-tempo="normal" aria-pressed="true">обычно</button>
+        <button class="chip" data-tempo="fast" aria-pressed="false">быстро</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="act primary" id="sayBtn">▶ Озвучить</button>
+      <button class="act" id="micBtn">🎤 Диктовать</button>
+      <button class="act" id="musicBtn">♪ Музыка</button>
+      <button class="act danger" id="stopBtn">■ Стоп</button>
+    </div>
+    <div class="note">Звук идёт из колонок этого компьютера — тот же движок, что в приложении. Диктовка распознаётся на компьютере (Vosk), голос не сохраняется; лучше в наушниках.</div>
+  </div>
+
+  <div class="card">
+    <div class="statusgrid">
+      <div><span class="label">Движок</span><b id="stEngine">не запущен</b></div>
+      <div><span class="label">Сцена</span><b id="stScene">—</b></div>
+      <div><span class="label">Погода и время</span><b id="stOverlays">—</b></div>
+      <div><span class="label">Настроение</span><b id="stMood">—</b></div>
+      <div class="wide"><span class="label">Напряжение (звукооператор)</span>
+        <div class="bar tension"><div id="stTension"></div></div></div>
+    </div>
+    <div class="partial" id="stPartial"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Журнал: что прозвучало и почему</div>
+    <div class="log" id="log"></div>
+  </div>
+</section>
+
+<main class="wrap" id="list" hidden></main>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -99,20 +193,24 @@ function groupOf(it) {
   return action ? "action" : "voice";
 }
 
+let playingUrl = null;                 // что играет — чтобы «■» пережил перерисовку плашек
+
 function stopPlaying() {
   player.pause();
   if (playingBtn) { playingBtn.classList.remove("playing"); playingBtn.textContent = "▶"; }
-  playingBtn = null;
+  playingBtn = null; playingUrl = null;
 }
 player.addEventListener("ended", stopPlaying);
 
+function markPlaying(btn) { btn.classList.add("playing"); btn.textContent = "■"; playingBtn = btn; }
+
 function play(btn, url) {
-  const same = playingBtn === btn;
+  const same = playingUrl === url;
   stopPlaying();
   if (same) return;
   player.src = url + "?t=" + Date.now();      // без кэша: после выбора файл другой
   player.play().catch(() => toast("Не удалось воспроизвести"));
-  btn.classList.add("playing"); btn.textContent = "■"; playingBtn = btn;
+  playingUrl = url; markPlaying(btn);
 }
 
 function toast(msg) {
@@ -148,21 +246,51 @@ function el(tag, attrs = {}, ...children) {
 function playButton(url, title) {
   const b = el("button", { class: "play", title, "aria-label": title }, "▶");
   b.addEventListener("click", () => play(b, url));
+  if (url === playingUrl) markPlaying(b);     // плашку перерисовали, а звук ещё играет
   return b;
+}
+
+const expanded = new Set();          // ключи развёрнутых плашек; по умолчанию все свёрнуты
+
+function who(it) {
+  /** Кто звучит — коротко, для свёрнутой плашки: «Медведь», «лошадь прискакала», «Лес». */
+  if (it.kind === "ambience") {
+    const name = SCENES[it.id] || OVERLAYS[it.id];
+    return name ? name[0].toUpperCase() + name.slice(1) : it.id;
+  }
+  const short = it.used_by.map(u => u.replace(/^персонаж: /, "").replace(/^действие «[^»]*»: /, "«") + (u.startsWith("действие") ? "»" : ""));
+  return short.join(" · ") || it.id;
+}
+
+function toggleCard(key) {
+  expanded.has(key) ? expanded.delete(key) : expanded.add(key);
+  render();
 }
 
 function card(it) {
   const stub = !it.current;
-  const badge = it.reviewed ? el("span", { class: "badge b-ok" }, "✓ проверено")
+  const open = expanded.has(it.key);
+  const badge = it.reviewed ? el("span", { class: "badge b-ok" }, "✓")
               : stub ? el("span", { class: "badge b-stub" }, "заглушка")
               : el("span", { class: "badge b-todo" }, "не проверено");
-  const c = el("div", { class: "card" + (it.reviewed ? " reviewed" : "") },
-    el("div", { class: "head" }, el("span", { class: "sid" }, it.id), badge),
-    el("div", { class: "used" }, it.used_by.length ? it.used_by.join(" · ") : "нигде не используется"));
+  if (it.reviewed) badge.title = "проверено на слух";
+  const summary = el("div", { class: "sumrow", role: "button", tabindex: "0", "aria-expanded": String(open),
+                              title: open ? "Свернуть" : "Развернуть" },
+    el("span", { class: "chev" }, open ? "▾" : "▸"),
+    el("span", { class: "who", title: it.used_by.join(" · ") }, who(it)),
+    el("span", { class: "fname", title: stub ? "" : it.current.name }, stub ? "синтетическая заглушка" : it.current.name),
+    badge,
+    it.has_file ? playButton(`/audio/current/${it.kind}/${it.id}.wav`, "Послушать текущий") : null);
+  summary.addEventListener("click", e => { if (!e.target.closest("button")) toggleCard(it.key); });
+  summary.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleCard(it.key); } });
+  const c = el("div", { class: "card" + (it.reviewed ? " reviewed" : "") + (open ? "" : " collapsed") }, summary);
+  if (!open) return c;
+
+  c.append(el("div", { class: "used" }, el("span", { class: "sid" }, `${it.id}.wav`), " · ",
+    it.used_by.length ? it.used_by.join(" · ") : "нигде не используется"));
 
   const now = el("div", { class: "now" },
     el("span", { class: "label" }, "Сейчас:"),
-    it.has_file ? playButton(`/audio/current/${it.kind}/${it.id}.wav`, "Послушать текущий") : null,
     el("span", {}, stub ? "синтетическая заглушка" : `${it.current.name} — ${it.current.username} `),
     stub ? null : el("a", { href: it.current.url, target: "_blank", rel: "noopener" }, "Freesound ↗"));
   const keep = el("button", { class: "act" + (it.reviewed ? "" : " primary") },
@@ -174,7 +302,7 @@ function card(it) {
   now.append(keep);
   c.append(now);
 
-  const list = el("details", it.reviewed ? {} : { open: "" }, el("summary", {}, `Варианты с Freesound (${it.candidates.length})`));
+  const list = el("details", { open: "" }, el("summary", {}, `Варианты с Freesound (${it.candidates.length})`));
   if (!it.candidates.length) list.append(el("div", { class: "empty" }, "Вариантов нет — поправьте запросы в data/freesound_queries.yaml и запустите tools/fetch_freesound.py"));
   for (const cand of it.candidates) {
     const choose = el("button", { class: "act" }, cand.current ? "Выбран" : "Выбрать");
@@ -225,9 +353,101 @@ document.getElementById("statusChips").addEventListener("click", e => {
   render();
 });
 document.getElementById("search").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+document.getElementById("expandAll").addEventListener("click", () => { items.filter(visible).forEach(i => expanded.add(i.key)); render(); });
+document.getElementById("collapseAll").addEventListener("click", () => { expanded.clear(); render(); });
 
-fetch("/api/sounds").then(r => r.json()).then(d => { items = d; render(); })
-  .catch(() => document.getElementById("progressText").textContent = "Не удалось загрузить каталог — сервер запущен?");
+let catalogLoaded = false;
+function loadCatalog() {
+  fetch("/api/sounds").then(r => r.json()).then(d => { items = d; catalogLoaded = true; render(); })
+    .catch(() => document.getElementById("progressText").textContent = "Не удалось загрузить каталог — сервер запущен?");
+}
+
+// ---------- вкладки ----------
+function showTab(name) {
+  document.querySelectorAll("#tabs .tab").forEach(t => t.setAttribute("aria-selected", t.dataset.tab === name));
+  document.getElementById("live").hidden = name !== "live";
+  document.getElementById("list").hidden = name !== "catalog";
+  document.getElementById("catalogHead").hidden = name !== "catalog";
+  if (name === "catalog") loadCatalog();          // свежие данные: в тесте могли что-то поменять
+  else stopPlaying();
+}
+document.getElementById("tabs").addEventListener("click", e => {
+  const t = e.target.closest(".tab"); if (t) showTab(t.dataset.tab);
+});
+
+// ---------- тест озвучки ----------
+const SCENES = { forest: "Лес", meadow: "Поле, луг", river: "Река", sea: "Море", cave: "Пещера", castle: "Замок, дворец",
+  tavern: "Таверна", city: "Город", battle: "Битва", home: "Изба, дом", village: "Деревня", swamp: "Болото" };
+const OVERLAYS = { rain: "дождь", storm: "гроза", wind: "ветер", snow: "снег", fire: "костёр", night: "ночь" };
+const MOODS = { calm: "спокойное", cheerful: "весёлое", tense: "тревожное", action: "динамичное" };
+const EXAMPLES = {
+  kolobok: "Жили-были дед да баба в деревне. Испекла баба колобок и положила на окошко. Покатился колобок в лес. Навстречу ему заяц. Потом вышла лиса и все засмеялись.",
+  chase: "Вдруг в лесу стало тихо и страшно. Из темноты завыл волк. Бегите скорее! За ними началась погоня, кони мчатся во весь опор.",
+  tavern: "Начался сильный дождь, и герои поспешили в таверну. Хозяин высыпал на прилавок горсть золотых монет. Вдруг разразилась гроза.",
+  sea: "Маленький кораблик плыл по синему морю. Ночью на небе светили звёзды. Вдруг из воды показался дракон и громко зарычал.",
+};
+let tempo = "normal", lastLine = 0, live = {};
+
+document.querySelectorAll("[data-example]").forEach(b => b.addEventListener("click", () => {
+  document.getElementById("story").value = EXAMPLES[b.dataset.example];
+}));
+document.getElementById("tempoChips").addEventListener("click", e => {
+  const b = e.target.closest("[data-tempo]"); if (!b) return;
+  tempo = b.dataset.tempo;
+  document.querySelectorAll("#tempoChips [data-tempo]").forEach(c => c.setAttribute("aria-pressed", c === b));
+});
+document.getElementById("sayBtn").addEventListener("click", async () => {
+  const text = document.getElementById("story").value.trim();
+  if (!text) { toast("Напишите текст или выберите пример"); return; }
+  try { const r = await post("/api/live/say", { text, tempo }); toast(`Озвучиваю: фраз — ${r.phrases}`); }
+  catch (e) { toast(e.message); }
+});
+document.getElementById("micBtn").addEventListener("click", () => post("/api/live/mic", { on: !live.listening }).then(applyState).catch(e => toast(e.message)));
+document.getElementById("musicBtn").addEventListener("click", () => post("/api/live/music", { on: !live.music_on }).then(applyState).catch(e => toast(e.message)));
+document.getElementById("stopBtn").addEventListener("click", () => post("/api/live/stop", {}).then(applyState).catch(e => toast(e.message)));
+
+function kindOf(line) {
+  if (/СЦЕНА|СЛОЙ/.test(line)) return "k-scene";
+  if (/ДЕЙСТВИЕ/.test(line)) return "k-sfx";
+  if (/ПЕРСОНАЖ/.test(line)) return "k-char";
+  if (/НАСТРОЕНИЕ|МУЗЫКА|ЗВУКООПЕРАТОР/.test(line)) return "k-mood";
+  if (/ тише |фраза:/.test(line)) return "k-quiet";
+  return "";
+}
+
+function applyState(s) {
+  live = s;
+  const eng = { idle: "не запущен", loading: "загружается… (несколько секунд)", ready: "готов", error: "ошибка: " + s.error };
+  document.getElementById("stEngine").textContent = s.busy ? "озвучивает…" : s.listening ? "слушает микрофон" : eng[s.status];
+  document.getElementById("stScene").textContent = SCENES[s.scene] || "—";
+  document.getElementById("stOverlays").textContent = s.overlays.map(o => OVERLAYS[o] || o).join(", ") || "—";
+  document.getElementById("stMood").textContent = MOODS[s.mood] || "—";
+  document.getElementById("stTension").style.width = ((s.intensity ?? 0) * 100) + "%";
+  document.getElementById("stPartial").textContent = s.partial ? "слышу: " + s.partial : "";
+  const mic = document.getElementById("micBtn");
+  mic.textContent = s.listening ? "■ Стоп микрофон" : "🎤 Диктовать"; mic.classList.toggle("on", s.listening);
+  const mus = document.getElementById("musicBtn");
+  mus.textContent = s.music_on ? "♪ Музыка: вкл" : "♪ Музыка: выкл"; mus.classList.toggle("on", s.music_on);
+  const log = document.getElementById("log");
+  const atBottom = log.scrollTop + log.clientHeight >= log.scrollHeight - 20;
+  for (const l of s.lines || []) {
+    if (l.n <= lastLine) continue;
+    log.append(el("div", { class: kindOf(l.text) }, l.text));
+    lastLine = l.n;
+  }
+  if (atBottom) log.scrollTop = log.scrollHeight;
+}
+
+async function poll() {
+  if (!document.getElementById("live").hidden) {
+    try { applyState(await (await fetch(`/api/live/state?since=${lastLine}`)).json()); } catch (e) { /* сервер перезапускается */ }
+  }
+  setTimeout(poll, 400);
+}
+
+post("/api/live/start", {}).then(applyState).catch(() => {});   // модели грузятся заранее, пока пишете текст
+poll();
+showTab("live");
 </script>
 </body>
 </html>

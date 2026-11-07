@@ -1,4 +1,5 @@
 """Каталог звуков: страница в браузере — послушать текущий звук и варианты с Freesound, выбрать или оставить.
+Плюс «Тест озвучки» (live_session.py): текст или диктовка → настоящий движок → звук из колонок.
 
   python tools/catalog.py            # http://127.0.0.1:8765 (откроется в браузере)
   python tools/catalog.py --port 9000 --no-browser
@@ -18,12 +19,13 @@ import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pick_sounds as ps  # noqa: E402
+from live_session import LiveSession  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -150,6 +152,8 @@ def audio_path(url_path: str) -> Path | None:
 
 
 class Handler(BaseHTTPRequestHandler):
+    session: LiveSession | None = None     # «Тест озвучки» — один на сервер, создаётся в serve()
+
     def log_message(self, fmt, *args):     # тише в консоли
         pass
 
@@ -170,6 +174,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
         if path == "/api/sounds":
             return self._json(catalog())
+        if path == "/api/live/state":
+            since = parse_qs(urlparse(self.path).query).get("since", ["0"])[0]
+            return self._json(self.session.state(int(since) if since.isdigit() else 0))
         if path.startswith("/audio/"):
             p = audio_path(path)
             if p is None:
@@ -182,16 +189,34 @@ class Handler(BaseHTTPRequestHandler):
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
             if path == "/api/pick":
-                return self._json(pick(body["key"], int(body["n"])))
+                item = pick(body["key"], int(body["n"]))
+                self.session.sound_changed()          # тест озвучки возьмёт новый файл
+                return self._json(item)
             if path == "/api/review":
                 return self._json(mark(body["key"], bool(body["ok"])))
+            s = self.session
+            if path == "/api/live/start":
+                s.ensure_engine()
+                return self._json(s.state())
+            if path == "/api/live/say":
+                return self._json({"phrases": s.say(str(body["text"]), str(body.get("tempo", "normal")))})
+            if path == "/api/live/mic":
+                s.mic_start() if body.get("on") else s.mic_stop()
+                return self._json(s.state())
+            if path == "/api/live/stop":
+                s.stop()
+                return self._json(s.state())
+            if path == "/api/live/music":
+                s.set_music(bool(body["on"]))
+                return self._json(s.state())
         except (ValueError, KeyError, TypeError) as e:
             return self._json({"error": str(e)}, HTTPStatus.BAD_REQUEST)
         self._json({"error": "нет такого действия"}, HTTPStatus.NOT_FOUND)
 
 
-def serve(port: int) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer(("127.0.0.1", port), Handler)    # только этот компьютер
+def serve(port: int, session: LiveSession | None = None) -> ThreadingHTTPServer:
+    handler = type("BoundHandler", (Handler,), {"session": session or LiveSession()})
+    return ThreadingHTTPServer(("127.0.0.1", port), handler)    # только этот компьютер
 
 
 def main() -> int:
