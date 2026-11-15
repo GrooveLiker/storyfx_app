@@ -128,6 +128,7 @@ class ActionMatcher:
     groups: list[ActionGroup]
     embedder: object | None = None
     clock: Callable[[], float] = time.monotonic
+    use_deadlines: bool = True          # речь: решать не позже ~1 с (D-011). Набор текста: False — по смыслу, не по секундомеру
     _seen: set[tuple[int, int, str]] = field(default_factory=set)    # (фраза, начало части, тема)
     _last_fired: dict[str, float] = field(default_factory=dict)
     _clf: dict[str, object] = field(default_factory=dict)
@@ -181,20 +182,35 @@ class ActionMatcher:
                 negated = any(is_negated(tokens, a) for a in anchors)
                 label = conf = None
                 if not ready:
-                    # D-011: звук ≤ 1 с. Чем дольше ждём, тем меньше уверенности нужно, чтобы решить:
-                    # до SOFT — только ясный смысл (ранний выстрел), потом SOFT_CONF, после HARD — обычный минимум.
-                    # отсчёт — от последнего якоря: «ударил … мечом» — новое слово темы, новая информация
-                    waited = now - self._first_seen.setdefault((*key, anchors[-1]), now)
+                    bare = len(tokens) - 1 <= anchors[-1]          # после якоря ещё ни слова
                     if negated or tokens[-1].word in config.PENDING_WORDS:
                         continue        # «дракон так и …» — дальше может быть «не зарычал»
-                    if waited < config.ACTION_SOFT_DEADLINE_S and len(tokens) - 1 <= anchors[-1]:
-                        continue        # рано, и после якоря ещё ни слова
-                    label, conf = self.classify(g, ctx)
-                    need = (config.ACTION_EARLY_CONF if waited < config.ACTION_SOFT_DEADLINE_S
-                            else config.ACTION_SOFT_CONF if waited < config.ACTION_HARD_DEADLINE_S
-                            else config.ACTION_MIN_CONF)
-                    if (label == NONE and waited < config.ACTION_HARD_DEADLINE_S) or (label != NONE and conf < need):
-                        continue
+                    if not self.use_deadlines:
+                        # набор текста: слова приходят медленно, секундомер врёт — только ранний выстрел,
+                        # когда за якорем уже есть слово и смысл ясен; иначе ждём слов или конца фразы
+                        if bare:
+                            continue
+                        label, conf = self.classify(g, ctx)
+                        if label == NONE or conf < config.ACTION_EARLY_CONF:
+                            continue
+                    else:
+                        # D-011: звук ≤ 1 с. Чем дольше ждём, тем меньше уверенности нужно:
+                        # до SOFT — только ясный смысл (ранний выстрел), потом SOFT_CONF, после HARD — обычный минимум.
+                        # Отсчёт — от последнего якоря: «ударил … мечом» — новое слово темы, новая информация.
+                        waited = now - self._first_seen.setdefault((*key, anchors[-1]), now)
+                        if waited < config.ACTION_SOFT_DEADLINE_S and bare:
+                            continue        # рано, и после якоря ещё ни слова
+                        label, conf = self.classify(g, ctx)
+                        need = (config.ACTION_EARLY_CONF if waited < config.ACTION_SOFT_DEADLINE_S
+                                else config.ACTION_SOFT_CONF if waited < config.ACTION_HARD_DEADLINE_S
+                                else config.ACTION_MIN_CONF)
+                        if bare:
+                            # голое слово: «…так воем и воют» (волны) — по одному слову решаем, только если уверены
+                            if label == NONE:
+                                continue
+                            need = max(need, config.ACTION_BARE_CONF)
+                        if (label == NONE and waited < config.ACTION_HARD_DEADLINE_S) or (label != NONE and conf < need):
+                            continue
                 self._seen.add(key)
                 # отрицание относится к якорю: «не зарычал», «дождя нет»; «орк упал и не встал» — звук нужен
                 if negated:
@@ -207,6 +223,9 @@ class ActionMatcher:
                     decisions.append(Decision(g.id, None, conf, ctx, "по смыслу без звука"))
                 elif conf < config.ACTION_MIN_CONF:
                     decisions.append(Decision(g.id, None, conf, ctx, f"не уверен ({label})"))
+                elif len(ctx_tokens) <= len(anchors) and conf < config.ACTION_BARE_CONF:
+                    # в части фразы — одно слово-якорь («…так воем | и воют»): смысла мало, нужен уверенный ответ
+                    decisions.append(Decision(g.id, None, conf, ctx, f"одно слово, не уверен ({label})"))
                 elif now - self._last_fired.get(label, -1e9) < g.cooldown:
                     decisions.append(Decision(g.id, None, conf, ctx, f"кулдаун ({label})"))
                 else:

@@ -41,6 +41,13 @@ def scene_data():
 
 
 @pytest.fixture(scope="session")
+def embedder():
+    """Модель смысла rubert-tiny2 — одна на все медленные тесты (загрузка ~5–10 с)."""
+    from storyfx.scenes import RuBertEmbedder
+    return RuBertEmbedder()
+
+
+@pytest.fixture(scope="session")
 def mood_data():
     from storyfx.mood import load_moods
     return load_moods()

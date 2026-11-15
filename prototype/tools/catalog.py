@@ -49,6 +49,20 @@ UPLOAD_TYPES = {".wav", ".mp3", ".ogg", ".flac", ".m4a", ".aiff", ".aif"}
 JOBS: dict[str, dict] = {}             # «Найти другие» в фоне: key → {"state": running|done|error, "msg": …}
 
 
+def _code_mtime() -> float:
+    """Когда последний раз меняли код каталога и движка — страница читается с диска каждый раз,
+    а код сервера — только при запуске: после обновления кода нужен перезапуск."""
+    files = list(Path(__file__).resolve().parent.glob("*.py")) + list((ROOT / "src" / "storyfx").glob("*.py"))
+    return max((f.stat().st_mtime for f in files), default=0.0)
+
+
+STARTED_CODE = _code_mtime()
+
+
+def code_is_stale() -> bool:
+    return _code_mtime() > STARTED_CODE + 1
+
+
 def reviewed_path() -> Path:
     return ps.ROOT / "sounds" / "reviewed.yaml"
 
@@ -281,7 +295,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(item(key))
         if path == "/api/live/state":
             since = parse_qs(urlparse(self.path).query).get("since", ["0"])[0]
-            return self._json(self.session.state(int(since) if since.isdigit() else 0))
+            st = self.session.state(int(since) if since.isdigit() else 0)
+            st["stale"] = code_is_stale()           # код обновили после запуска — страница попросит перезапуск
+            return self._json(st)
         if path.startswith("/audio/"):
             p = audio_path(path)
             if p is None:
@@ -318,8 +334,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/live/start":
                 s.ensure_engine()
                 return self._json(s.state())
-            if path == "/api/live/say":
-                return self._json({"phrases": s.say(str(body["text"]), str(body.get("tempo", "normal")))})
+            if path == "/api/live/text":            # рассказчик дописал слова или закрыл фразу
+                return self._json({"sent": s.feed_text(str(body["text"]), bool(body.get("final")))})
             if path == "/api/live/mic":
                 s.mic_start() if body.get("on") else s.mic_stop()
                 return self._json(s.state())

@@ -29,6 +29,9 @@ sfx:
   bell:         {queries: ["church bell", "bell toll", "large bell ring"], min: 1, max: 15, cut: 5.0}
   arrow:        {queries: ["arrow shot", "bow arrow release", "arrow whoosh impact"], min: 0.2, max: 3, cut: 1.5}
   thunder:      {queries: ["thunder clap", "thunder rumble", "thunder strike"], min: 1, max: 12, cut: 5.0}
+  gunshot:      {queries: ["rifle gunshot", "shotgun shot", "gunshot single", "musket shot"], min: 0.3, max: 6, cut: 2.5}
+  sleigh_bells: {queries: ["sleigh bells", "sleigh bells jingle", "horse sleigh bells"], min: 1, max: 20, cut: 4.0}
+  frost_crackle: {queries: ["ice crackle", "ice cracking", "frozen lake crack", "ice creak"], min: 0.5, max: 15, cut: 3.0}
 
   # --- голоса персонажей при появлении (data/characters.yaml, docs/characters.md) ---
   bear_growl:     {queries: ["bear growl", "bear roar", "grizzly growl"], min: 0.5, max: 8, cut: 2.5}
@@ -36,7 +39,7 @@ sfx:
   cat_meow:       {queries: ["cat meow", "kitten meow", "cat meowing"], min: 0.3, max: 5, cut: 1.5}
   fanfare:        {queries: ["royal fanfare trumpet", "medieval fanfare", "trumpet fanfare short"], min: 1, max: 10, cut: 4.0}
   hare_hop:       {queries: ["rustling grass", "grass rustle", "leaves rustle short", "rabbit"], min: 0.3, max: 10, cut: 1.5}
-  old_man_grunt:  {queries: ["old man cough", "man groan", "man sigh", "grunt effort"], min: 0.3, max: 6, cut: 1.5}
+  old_man_grunt:  {queries: ["sigh", "old msn"], min: 0.3, max: 6, cut: 1.5}
   rooster:        {queries: ["rooster crow", "rooster crowing", "cock a doodle doo"], min: 1, max: 8, cut: 3.0}
   old_woman_sigh: {queries: ["woman sigh", "female sigh", "sigh", "woman groan"], min: 0.3, max: 6, cut: 1.5}
   child_laugh:    {queries: ["child laugh", "kid giggle", "children laughing"], min: 0.5, max: 6, cut: 2.0}

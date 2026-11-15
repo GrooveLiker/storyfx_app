@@ -1,0 +1,89 @@
+# Что обязано и что не должно прозвучать в сказках (tests/stories/*.txt). Проверка — tests/test_stories.py.
+# Ожидания — по смыслу сказки (как сделал бы звукорежиссёр), а не по тому, что движок выдаёт сейчас.
+#
+# expect:    {вид: [id]}  — хотя бы раз за сказку. Виды: sfx, char, leave, scene, overlay_on, mood.
+# forbid:    {вид: [id]}  — ни разу.
+# forbid_in: [{words: регулярка, вид: [id]}] — не на фразах, где есть эти слова.
+# limits:    фраз на одну смену сцены / настроения — не меньше (сцена 8 → не чаще раза в 8 фраз).
+# known_failing: проверки, которые сейчас не проходят (задача 23, docs/review-2026-11-13.md).
+#   Такие тесты помечены «ожидаемо падает»; если проверка начала проходить — тест упадёт и попросит
+#   убрать её из списка. Имена: expect:sfx:splash, forbid:sfx:coins, forbid_in:0, limit:scene, limit:mood.
+
+defaults:
+  limits: {scene: 8, mood: 15}
+
+stories:
+  rybak:
+    expect:
+      char: [old_man, old_woman, magic]
+      scene: [sea]
+      sfx: [splash]                       # «хвостом по воде плеснула»
+      overlay_on: [storm]                 # «на море черная буря»
+    forbid:
+      sfx: [coins, door_creak, door_knock, sword_clash]   # «золотая рыбка», «воротился», «топорики держат»
+      scene: [forest, battle]             # «дубовыми вороты»
+    forbid_in:
+      - {words: "грозн", overlay_on: [storm]}             # «грозная стража» — не гроза
+      - {words: "крестьянк", scene: [village]}           # «не хочу быть крестьянкой» — речь, не место
+      - {words: "воем и воют", sfx: [wolf_howl]}         # воют волны — решено по голому слову «воют» (шаг 3)
+    known_failing:
+      - forbid:sfx:door_creak
+
+  kolobok:
+    expect:
+      char: [old_man, old_woman, hare, wolf, bear, fox]
+      scene: [home]                       # «из чего печь-то», изба
+    forbid:
+      sfx: [wolf_howl, bird]              # звери не воют от одного «навстречу ему»; колобок поёт, не птицы
+      leave: [old_man, old_woman, hare, wolf, bear, fox]  # «я у дедушки ушёл» — ушёл колобок
+    known_failing: []
+
+  morozko:
+    expect:
+      char: [old_man, old_woman, frost]
+      scene: [home, forest]
+      overlay_on: [snow]                  # «трескучий мороз»
+      sfx: [bell, sleigh_bells, frost_crackle]   # «с колокольцом», «запряг кобылу в дровни», «потрескивает»
+    forbid:
+      sfx: [wolf_howl]                    # «девка завыла»
+      char: [dog]                         # «старый пёс» — ругательство
+      overlay_on: [storm]                 # «как гроза разразилась» — сравнение
+    forbid_in:
+      - {words: "запряг", sfx: [horse_gallop]}           # запрячь — не скакать
+      - {words: "свалил", sfx: [fall]}                   # «деток свалил» в сани
+    known_failing: []
+
+  gusi:
+    expect:
+      char: [old_man, old_woman, goose, hedgehog, witch]
+      leave: [goose]                      # «пропали за тёмным лесом», «улетели»
+      scene: [meadow, forest, river]
+    forbid:
+      sfx: [coins, door_creak]            # «золотыми яблочками», «гуси воротились»
+      scene: [city]                       # «побежала на улицу» — деревня
+    forbid_in:
+      - {words: "подхватили мальчика", char: [child]}    # мальчика уносят — детский смех не к месту
+    known_failing:
+      - forbid_in:0     # правило есть (quiet_moods), но настроение в этот момент ещё «спокойное»
+
+  owner_sea:
+    expect:
+      char: [old_man, old_woman, hen]
+      scene: [sea]
+      overlay_on: [storm]                 # «начался шторм»
+      sfx: [thunder, splash]              # «гром гремит», «закинул невод»
+    forbid_in:
+      - {words: "вытащил", sfx: [splash]}              # невод тянут из воды — не всплеск
+    known_failing: []
+
+  owner_bear:
+    expect:
+      char: [old_man, bear]
+      scene: [forest]
+      sfx: [gunshot]                      # «прицелился и выстрелил», «снова бах выстрел»
+    forbid:
+      scene: [village]                    # «мужик испугался и бежать» — всё ещё лес
+      sfx: [arrow]                        # ружьё — не стрела
+    forbid_in:
+      - {words: "шелохнется", sfx: [roar]}               # медведь стоит молча
+    known_failing: []

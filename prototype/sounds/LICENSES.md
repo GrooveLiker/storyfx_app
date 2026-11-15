@@ -2,6 +2,7 @@
 
 Файлы, не перечисленные ниже, синтезированы `tools/gen_sounds.py` — собственная работа проекта.
 Внешние звуки — только CC0 (общественное достояние, указание автора не требуется, но мы указываем).
+«Своя запись» — файл владельца, загруженный в каталоге звуков; оригинал хранится в sounds/own/.
 
 | Файл | Источник | Автор | Лицензия | Изменения |
 |---|---|---|---|---|
@@ -46,9 +47,11 @@
 | sfx/footsteps.wav | https://freesound.org/people/Fission9/sounds/521590/ | Fission9 | CC0 1.0 | обрезка, громкость |
 | sfx/fox_yelp.wav | https://freesound.org/people/Setzilla/sounds/173208/ | Setzilla | CC0 1.0 | обрезка, громкость |
 | sfx/frog_croak.wav | https://freesound.org/people/katzlbt/sounds/361117/ | katzlbt | CC0 1.0 | обрезка, громкость |
+| sfx/frost_crackle.wav | https://freesound.org/people/egomassive/sounds/536807/ | egomassive | CC0 1.0 | обрезка, громкость |
 | sfx/giant_steps.wav | https://freesound.org/people/Beefmaster69/sounds/531725/ | Beefmaster69 | CC0 1.0 | обрезка, громкость |
 | sfx/goat_bleat.wav | https://freesound.org/people/Kinoton/sounds/581240/ | Kinoton | CC0 1.0 | обрезка, громкость |
 | sfx/goose_honk.wav | https://freesound.org/people/SpaceJoe/sounds/510945/ | SpaceJoe | CC0 1.0 | обрезка, громкость |
+| sfx/gunshot.wav | https://freesound.org/people/florianreichelt/sounds/563015/ | florianreichelt | CC0 1.0 | обрезка, громкость |
 | sfx/hare_hop.wav | https://freesound.org/people/alegemaate/sounds/364712/ | alegemaate | CC0 1.0 | обрезка, громкость |
 | sfx/heal.wav | https://freesound.org/people/Assetsmith/sounds/876169/ | Assetsmith | CC0 1.0 | обрезка, громкость |
 | sfx/hedgehog_snuffle.wav | https://freesound.org/people/ffdown/sounds/570301/ | ffdown | CC0 1.0 | обрезка, громкость |
@@ -59,15 +62,16 @@
 | sfx/insect_buzz.wav | https://freesound.org/people/bajko/sounds/328398/ | bajko | CC0 1.0 | обрезка, громкость |
 | sfx/lightning.wav | https://freesound.org/people/doudar41/sounds/535952/ | doudar41 | CC0 1.0 | обрезка, громкость |
 | sfx/magic.wav | https://freesound.org/people/opticaillusions/sounds/521873/ | opticaillusions | CC0 1.0 | обрезка, громкость |
-| sfx/monkey.wav | https://freesound.org/people/TheKingOfGeeks360/sounds/843477/ | TheKingOfGeeks360 | CC0 1.0 | обрезка, громкость |
+| sfx/monkey.wav | своя запись: sounds/own/sfx__monkey.wav | владелец | своя | обрезка, громкость |
 | sfx/mouse_squeak.wav | https://freesound.org/people/AntumDeluge/sounds/188043/ | AntumDeluge | CC0 1.0 | обрезка, громкость |
-| sfx/old_man_grunt.wav | https://freesound.org/people/FullMetalJedi/sounds/530127/ | FullMetalJedi | CC0 1.0 | обрезка, громкость |
-| sfx/old_woman_sigh.wav | https://freesound.org/people/threadzz/sounds/384992/ | threadzz | CC0 1.0 | обрезка, громкость |
+| sfx/old_man_grunt.wav | своя запись: sounds/own/sfx__old_man_grunt.wav | владелец | своя | обрезка, громкость |
+| sfx/old_woman_sigh.wav | своя запись: sounds/own/sfx__old_woman_sigh.wav | владелец | своя | обрезка, громкость |
 | sfx/owl.wav | https://freesound.org/people/Breviceps/sounds/465697/ | Breviceps | CC0 1.0 | обрезка, громкость |
 | sfx/propeller.wav | https://freesound.org/people/Mish7913/sounds/741362/ | Mish7913 | CC0 1.0 | обрезка, громкость |
 | sfx/punch.wav | https://freesound.org/people/peridactyloptrix/sounds/209765/ | peridactyloptrix | CC0 1.0 | обрезка, громкость |
 | sfx/roar.wav | https://freesound.org/people/999999990/sounds/320345/ | 999999990 | CC0 1.0 | обрезка, громкость |
 | sfx/rooster.wav | https://freesound.org/people/BenjaminNelan/sounds/435506/ | BenjaminNelan | CC0 1.0 | обрезка, громкость |
+| sfx/sleigh_bells.wav | https://freesound.org/people/jcdecha/sounds/235465/ | jcdecha | CC0 1.0 | обрезка, громкость |
 | sfx/snake_hiss.wav | https://freesound.org/people/xoiziox/sounds/553374/ | xoiziox | CC0 1.0 | обрезка, громкость |
 | sfx/splash.wav | https://freesound.org/people/qubodup/sounds/212143/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/sword_clash.wav | https://freesound.org/people/JohnBuhr/sounds/326867/ | JohnBuhr | CC0 1.0 | обрезка, громкость |

@@ -21,6 +21,7 @@ class SoundMixer:
     clock: Callable[[], float]
     mood: str = "calm"
     intensity: float = field(default=-1.0)       # -1 — ещё не считали
+    use_tempo: bool = True                       # набор текста: темп набора — не темп рассказа, не учитываем
     _word_times: deque = field(default_factory=deque)
     _seen_in_utt: int = 0
     _last_t: float | None = None
@@ -43,8 +44,8 @@ class SoundMixer:
 
     # ---------- оценки ----------
     def tempo(self) -> float | None:
-        """Слов в секунду за окно; None — слов пока мало."""
-        if len(self._word_times) < config.TEMPO_MIN_WORDS:
+        """Слов в секунду за окно; None — слов пока мало или темп не учитываем (набор текста)."""
+        if not self.use_tempo or len(self._word_times) < config.TEMPO_MIN_WORDS:
             return None
         span = max(self.clock() - self._word_times[0], 2.0)   # от первого слова в окне до сейчас
         return len(self._word_times) / span

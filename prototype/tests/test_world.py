@@ -45,9 +45,20 @@ def test_long_silence_counts_as_gone(characters, clock):
     w = WorldState(clock=clock)
     t = CharacterTracker(list(characters), clock=clock)
     observe(t, w, "пришёл медведь")
-    clock.advance(config.CHARACTER_REINTRO_S + 1)
+    for _ in range(config.CHARACTER_REINTRO_PHRASES):
+        observe(t, w, "тихо шумел лес")
     assert w.on_stage() == []
     assert observe(t, w, "и снова медведь") == [("enter", "bear")]
+
+
+def test_object_of_preposition_does_not_leave(characters, clock):
+    """«Я у дедушки ушёл, я у бабушки ушёл» — ушёл колобок, дед и баба остались."""
+    w = WorldState(clock=clock)
+    t = CharacterTracker(list(characters), clock=clock)
+    observe(t, w, "жили-были дед да баба")
+    assert observe(t, w, "я у дедушки ушёл, я у бабушки ушёл") == []
+    assert set(w.on_stage()) == {"old_man", "old_woman"}
+    assert observe(t, w, "дед ушёл в лес") == [("leave", "old_man")]       # а тут дед — подлежащее
 
 
 def test_max_entries_per_phrase(characters, clock):
@@ -77,6 +88,16 @@ def test_scene_window_forgets_old_place(scene_data):
     t.add_utterance("покатился колобок по дорожке прямо в лес")
     assert t.current == "forest"
     assert "деревне" not in t._words and len(t._words) <= config.SCENE_KEEP_AFTER_SWITCH
+
+
+def test_scene_window_short_phrases(scene_data):
+    """Короткие фразы: «…в деревне. Покатился колобок в лес.» — от деревни в окне ничего не осталось."""
+    from storyfx.scenes import SceneTracker
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("жили-были дед да баба в деревне")
+    t.add_utterance("покатился колобок в лес")
+    assert t.current == "forest" and t._words == ["покатился", "колобок", "в", "лес"]
 
 
 def test_engine_world_story(actions, scene_data, characters, clock):

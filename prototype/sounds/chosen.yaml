@@ -245,6 +245,12 @@ sfx/frog_croak:
   username: katzlbt
   url: https://freesound.org/people/katzlbt/sounds/361117/
   license: http://creativecommons.org/publicdomain/zero/1.0/
+sfx/frost_crackle:
+  id: 536807
+  name: Ice.ogg
+  username: egomassive
+  url: https://freesound.org/people/egomassive/sounds/536807/
+  license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/giant_steps:
   id: 531725
   name: giant footsteps.mp3
@@ -262,6 +268,12 @@ sfx/goose_honk:
   name: Water Birds - 5.wav
   username: SpaceJoe
   url: https://freesound.org/people/SpaceJoe/sounds/510945/
+  license: http://creativecommons.org/publicdomain/zero/1.0/
+sfx/gunshot:
+  id: 563015
+  name: a loud gunshot in the woods
+  username: florianreichelt
+  url: https://freesound.org/people/florianreichelt/sounds/563015/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/hare_hop:
   id: 364712
@@ -324,11 +336,11 @@ sfx/magic:
   url: https://freesound.org/people/opticaillusions/sounds/521873/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/monkey:
-  id: 843477
-  name: Primates - Geoffroy's Spider Monkey, Take 2
-  username: TheKingOfGeeks360
-  url: https://freesound.org/people/TheKingOfGeeks360/sounds/843477/
-  license: http://creativecommons.org/publicdomain/zero/1.0/
+  id: own-1794056582
+  name: wild-monkey-laugh.mp3
+  username: владелец
+  url: ''
+  license: own
 sfx/mouse_squeak:
   id: 188043
   name: Mouse
@@ -336,17 +348,17 @@ sfx/mouse_squeak:
   url: https://freesound.org/people/AntumDeluge/sounds/188043/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/old_man_grunt:
-  id: 530127
-  name: A Hundred Year Old Man's Cough.wav
-  username: FullMetalJedi
-  url: https://freesound.org/people/FullMetalJedi/sounds/530127/
-  license: http://creativecommons.org/publicdomain/zero/1.0/
+  id: own-1794056405
+  name: severe-perspiration-in-an-adult-male.mp3
+  username: владелец
+  url: ''
+  license: own
 sfx/old_woman_sigh:
-  id: 384992
-  name: woman sigh
-  username: threadzz
-  url: https://freesound.org/people/threadzz/sounds/384992/
-  license: http://creativecommons.org/publicdomain/zero/1.0/
+  id: own-1794056524
+  name: yawning-female.mp3
+  username: владелец
+  url: ''
+  license: own
 sfx/owl:
   id: 465697
   name: Owl Hoot
@@ -376,6 +388,12 @@ sfx/rooster:
   name: Rooster Crow 3
   username: BenjaminNelan
   url: https://freesound.org/people/BenjaminNelan/sounds/435506/
+  license: http://creativecommons.org/publicdomain/zero/1.0/
+sfx/sleigh_bells:
+  id: 235465
+  name: Sleigh_Bells_fast.wav
+  username: jcdecha
+  url: https://freesound.org/people/jcdecha/sounds/235465/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/snake_hiss:
   id: 553374

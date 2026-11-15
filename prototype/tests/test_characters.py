@@ -50,13 +50,28 @@ def test_negation_is_not_appearance(tracker):
 
 
 def test_sound_once_then_again_after_silence(tracker, clock):
+    """Присутствие — по фразам, не по секундам (задача 23, шаг 5)."""
     assert ids(tracker, "пришёл медведь") == ["bear"]
-    clock.advance(30)
+    clock.advance(1000)                                               # долго печатали — неважно
     assert ids(tracker, "медведь рассердился") == []                  # уже здесь
-    clock.advance(config.CHARACTER_REINTRO_S - 10)
-    assert ids(tracker, "медведь ушёл") == []                         # упоминание продлило «присутствие»
-    clock.advance(config.CHARACTER_REINTRO_S + 1)
-    assert ids(tracker, "и снова явился медведь") == ["bear"]         # давно не было — появился заново
+    for _ in range(config.CHARACTER_REINTRO_PHRASES - 2):
+        ids(tracker, "шёл дождь")
+    assert ids(tracker, "медведь зарычал") == []                      # 28 фраз молчания — всё ещё здесь
+    for _ in range(config.CHARACTER_REINTRO_PHRASES):
+        ids(tracker, "шёл дождь")
+    assert ids(tracker, "и снова явился медведь") == ["bear"]         # 30 фраз о нём ни слова — появился заново
+
+
+def test_comparison_is_not_appearance(tracker):
+    assert ids(tracker, "силён он был, как медведь") == []
+    assert ids(tracker, "старуха визжала, словно лиса") == ["old_woman"]
+
+
+def test_address_is_not_appearance(tracker):
+    """«Что ты наделал, старый пёс?» — ругают старика, собаки нет."""
+    assert ids(tracker, "что ты наделал, старый пёс") == []
+    assert ids(tracker, "во двор вбежал пёс") == ["dog"]
+    assert ids(tracker, "ну что ты лаешь, пёс") == []                  # пёс уже здесь — к нему обращаются
 
 
 def test_max_per_phrase(tracker):
@@ -85,3 +100,19 @@ def test_engine_skips_character_if_action_sounded(actions, scene_data, character
     assert ("char", "bear") not in eng.events
     eng.on_text(TextEvent("пришла лиса", True))   # следующая фраза — уже без звука действия
     assert ("char", "fox") in eng.events
+
+
+def test_voice_quiet_in_wrong_mood(actions, scene_data, characters, mood_data, clock):
+    """Детский смех, когда мальчика уносят гуси, — не к месту: у ребёнка quiet_moods [tense, action]."""
+    from storyfx.mood import make_mood_tracker
+    eng = make_engine(actions, scene_data, clock, characters=characters)
+    eng.moods = make_mood_tracker(*mood_data)
+    eng.world.mood = "tense"
+    feed_text(eng, "Налетели гуси и подхватили мальчика.", clock)
+    assert ("char", "goose") in eng.events and ("char", "child") not in eng.events
+    assert ("sfx", "child_laugh") not in eng.audio.log
+    happy = make_engine(actions, scene_data, clock, characters=characters)   # новый рассказ: ребёнка ещё не было
+    happy.moods = make_mood_tracker(*mood_data)
+    happy.world.mood = "cheerful"
+    feed_text(happy, "Во двор прибежала девочка.", clock)
+    assert ("sfx", "child_laugh") in happy.audio.log                    # весело — смех к месту

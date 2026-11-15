@@ -32,6 +32,44 @@ def tokenize(text: str) -> list[Token]:
     return [Token(w, stem(w)) for w in _WORD_RE.findall(normalize(text))]
 
 
+# ---------- прямая речь (только для текста: у микрофона кавычек нет) ----------
+SPEECH_OPEN, SPEECH_CLOSE = "⟦", "⟧"     # ⟦ ⟧ — служебные метки реплик
+_DASHES = "—–"
+
+
+def mark_speech(text: str) -> str:
+    """Пометить реплики: «…» и строки, начатые тире («— Печка, печка, скажи! — говорит девочка»):
+    реплика — до « — » со словами автора, после следующего « — » — снова реплика."""
+    out = []
+    for line in text.split("\n"):
+        body = line.lstrip()
+        if body[:1] in _DASHES or body.startswith("- "):
+            parts = re.split(r"\s[—–-]\s", body[1:])
+            rebuilt = []
+            for i, part in enumerate(parts):
+                rebuilt.append(f"{SPEECH_OPEN}{part}{SPEECH_CLOSE}" if i % 2 == 0 else part)
+            line = " ".join(rebuilt)
+        out.append(line.replace("«", SPEECH_OPEN).replace("»", SPEECH_CLOSE)
+                       .replace("„", SPEECH_OPEN).replace("“", SPEECH_CLOSE))
+    return "\n".join(out)
+
+
+def speech_words(text: str, in_speech: bool = False) -> tuple[list[str], list[bool], bool]:
+    """Текст с метками ⟦ ⟧ → слова (как их видит tokenize), для каждого — «в реплике ли», и состояние
+    в конце (реплика может продолжиться в следующей фразе)."""
+    words, mask = [], []
+    for part in re.split(f"([{SPEECH_OPEN}{SPEECH_CLOSE}])", text):
+        if part == SPEECH_OPEN:
+            in_speech = True
+        elif part == SPEECH_CLOSE:
+            in_speech = False
+        else:
+            ws = [t.word for t in tokenize(part)]
+            words += ws
+            mask += [in_speech] * len(ws)
+    return words, mask, in_speech
+
+
 @dataclass(frozen=True)
 class PatternWord:
     kind: str    # "prefix" — слово начинается с value; "stem" — совпадение основ; "word" — точное слово
@@ -101,6 +139,11 @@ def find_matches(pattern: Pattern, tokens: list[Token], max_gap: int = config.MA
         if ok:
             out.append(Match(pattern, i, pos))
     return out
+
+
+def is_comparison(tokens: list[Token], start: int) -> bool:
+    """«как гроза», «словно медведь» — сравнение: ни погоды, ни места, ни персонажа на самом деле нет."""
+    return start > 0 and tokens[start - 1].word in config.SIMILE_WORDS
 
 
 def is_negated(tokens: list[Token], start: int, window: int = config.NEGATION_WINDOW,

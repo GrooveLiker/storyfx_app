@@ -1,24 +1,24 @@
-"""«Тест озвучки» в каталоге: настоящий движок приложения, текст или диктовка → звук из колонок.
+"""«Тест озвучки» в каталоге: рассказчик пишет текст в поле или диктует — система слушает и озвучивает.
 
-Движок создаётся при первом обращении (модели грузятся несколько секунд — в фоне).
-Текст подаётся по словам в темпе речи (звукооператор слышит темп). Диктовка — Vosk на этом
-компьютере; голос не сохраняется (CLAUDE.md, правила 1–2).
+Текст: страница следит за полем и шлёт сюда, что рассказчик дописал (feed_text): слова недописанной
+фразы — как частичный результат распознавания, закрытая фраза («.», «!», «?», Enter) — как финальный.
+Диктовка: Vosk на этом компьютере (голос не сохраняется, CLAUDE.md правила 1–2); распознанные фразы
+страница дописывает в то же поле (heard), повторно они не озвучиваются.
+Движок — тот же, что в приложении; создаётся при первом обращении (модели грузятся в фоне).
 """
 from __future__ import annotations
 
-import queue
 import re
 import threading
 import time
 from collections import deque
 from typing import Callable
 
-TEMPO = {"slow": 0.6, "normal": 0.4, "fast": 0.22}     # секунд на слово: ≈1,7 / 2,5 / 4,5 сл/с
 
-
-def split_phrases(text: str) -> list[str]:
-    """Фразы — как паузы рассказчика: по . ! ? … и переносам строк."""
-    return [p.strip() for p in re.split(r"[.!?…\n]+", text) if p.strip()]
+def as_heard(text: str) -> str:
+    """Текст рассказчика → как его отдал бы Vosk: слова без знаков препинания, строчными."""
+    words = (re.sub(r"[^\w\-]", "", w).strip("-").lower() for w in text.split())
+    return " ".join(w for w in words if w)
 
 
 class LiveSession:
@@ -30,28 +30,27 @@ class LiveSession:
         self.engine = None
         self.status = "idle"             # idle → loading → ready | error
         self.error = ""
-        self._lock = threading.RLock()   # движок — из потока текста и потока микрофона
+        self._lock = threading.RLock()   # движок — из запросов страницы и потока микрофона
         self._lines: deque[tuple[int, str]] = deque(maxlen=400)
+        self._heard: deque[tuple[int, str]] = deque(maxlen=100)   # фразы диктовки — дописать в поле
         self._seq = 0
-        self._texts: queue.Queue[tuple[str, float]] = queue.Queue()
-        self._cancel = threading.Event()
-        self._busy = False
         self._mic_stop: threading.Event | None = None
+        self._in_speech = False                 # закрытая фраза кончилась внутри «…» — следующая продолжает реплику
         self.partial = ""
-        threading.Thread(target=self._text_worker, daemon=True).start()
 
     # ---------- журнал ----------
+    def _next(self) -> int:
+        self._seq += 1
+        return self._seq
+
     def log(self, line: str) -> None:
         with self._lock:
-            self._seq += 1
-            self._lines.append((self._seq, line))
+            self._lines.append((self._next(), line))
 
     # ---------- движок ----------
     def ensure_engine(self, wait: bool = False) -> None:
         with self._lock:
-            if self.status in ("loading", "ready"):
-                pass
-            else:
+            if self.status not in ("loading", "ready"):
                 self.status, self.error = "loading", ""
                 threading.Thread(target=self._load, daemon=True).start()
         if wait:
@@ -64,7 +63,7 @@ class LiveSession:
             eng = self._factory(self.log)
             with self._lock:
                 self.engine, self.status = eng, "ready"
-            self.log("Готово. Пишите текст или диктуйте.")
+            self.log("Готово. Нажмите «Начать озвучку» и пишите рассказ или диктуйте.")
         except Exception as e:                       # нет модели, нет звуковой карты и т.п.
             self.status, self.error = "error", str(e)
             self.log(f"Ошибка: {e}")
@@ -75,45 +74,39 @@ class LiveSession:
             self.engine.on_text(ev)
 
     def _wake_music(self) -> None:
-        """После «Стоп» музыка молчит; при новом рассказе — снова текущее настроение (если включена)."""
+        """После «Стоп» музыка молчит; когда рассказ продолжился — снова текущее настроение (если включена)."""
         e = self.engine
         if e.music_on and getattr(e.audio, "_music", True) is None:
             e.set_music_enabled(True)
 
-    # ---------- текст ----------
-    def say(self, text: str, tempo: str = "normal") -> int:
-        phrases = split_phrases(text)
-        if not phrases:
-            return 0
-        self.ensure_engine()
-        self._cancel.clear()
-        for p in phrases:
-            self._texts.put((p, TEMPO.get(tempo, TEMPO["normal"])))
-        return len(phrases)
-
-    def _text_worker(self) -> None:
+    # ---------- текст: рассказчик пишет в поле ----------
+    def feed_text(self, text: str, final: bool) -> bool:
+        """Что рассказчик дописал. final=False — слова недописанной фразы, True — фраза закрыта.
+        Возвращает False, если слов нет (одни знаки) — ничего не отправлено."""
+        if self.status != "ready":
+            raise ValueError("движок ещё загружается — подождите несколько секунд")
         from storyfx.asr import TextEvent
-        while True:
-            phrase, delay = self._texts.get()
-            self._busy = True
-            try:
-                while self.status == "loading":
-                    self._sleep(0.1)
-                if self.status != "ready" or self._cancel.is_set():
-                    continue
-                with self._lock:
-                    self._wake_music()
-                words = phrase.split()
-                for i in range(1, len(words) + 1):
-                    if self._cancel.is_set():
-                        break
-                    self._feed(TextEvent(" ".join(words[:i]), False))
-                    self._sleep(delay)
-                else:
-                    self._feed(TextEvent(" ".join(words), True))
-                    self._sleep(delay * 2)               # пауза между фразами — как у рассказчика
-            finally:
-                self._busy = self._texts.qsize() > 0
+        from storyfx.textnorm import mark_speech, speech_words
+        # реплики героев («…», строки с тире) не меняют место и погоду — шаг 6 задачи 23
+        words, mask, end_state = speech_words(mark_speech(text), self._in_speech)
+        if not words:
+            return False
+        with self._lock:
+            self._source("text")
+            self._wake_music()
+            self._feed(TextEvent(" ".join(words), final, tuple(mask)))
+            if final:
+                self._in_speech = end_state       # «…» может продолжиться в следующей фразе
+        return True
+
+    def _source(self, kind: str) -> None:
+        """Набор текста и речь — разные ритмы: при наборе слова идут медленно, секундомер и темп врут.
+        text: действия решаются по смыслу, а не по сроку (D-011 — для речи), темп не учитывается."""
+        e = self.engine
+        speech = kind == "speech"
+        e.actions.use_deadlines = speech
+        if e.mixer:
+            e.mixer.use_tempo = speech
 
     # ---------- микрофон ----------
     @property
@@ -138,9 +131,15 @@ class LiveSession:
             events = (self._mic_factory or mic_events)(device=device, stop=stop)
             self.log("🎤 Слушаю микрофон (голос не сохраняется). Лучше в наушниках.")
             with self._lock:
+                self._source("speech")
                 self._wake_music()
             for ev in events:
-                self._feed(ev)
+                with self._lock:
+                    self._source("speech")          # могут и печатать при включённом микрофоне
+                    self._feed(ev)
+                if ev.final:
+                    with self._lock:
+                        self._heard.append((self._next(), ev.text))
         except Exception as e:
             self.log(f"Ошибка микрофона: {e}")
         finally:
@@ -155,13 +154,7 @@ class LiveSession:
 
     # ---------- управление ----------
     def stop(self) -> None:
-        """Тишина и чистый лист: очередь текста, сцена, погода, музыка, персонажи, настроение."""
-        self._cancel.set()
-        while not self._texts.empty():
-            try:
-                self._texts.get_nowait()
-            except queue.Empty:
-                break
+        """Тишина и чистый лист: сцена, погода, музыка, кто на сцене, настроение."""
         self.mic_stop()
         with self._lock:
             e = self.engine
@@ -177,6 +170,7 @@ class LiveSession:
                 e.moods._words, e.moods._candidate, e.moods._candidate_hits = [], None, 0
                 e.moods.current = e.world.mood = _default_mood()
             e.actions._last_fired.clear()
+            self._in_speech = False
             if e.mixer:
                 from storyfx.mixer import SoundMixer
                 e.mixer = SoundMixer(clock=e.mixer.clock, mood=e.mood or "calm")
@@ -207,8 +201,7 @@ class LiveSession:
         with self._lock:
             e = self.engine
             return {
-                "status": self.status, "error": self.error,
-                "busy": self._busy or not self._texts.empty(), "listening": self.listening,
+                "status": self.status, "error": self.error, "listening": self.listening,
                 "partial": self.partial,
                 "scene": e.world.place if e else None,
                 "overlays": list(e.world.weather) if e else [],
@@ -217,6 +210,7 @@ class LiveSession:
                 "intensity": round(e.mixer.intensity, 2) if e and e.mixer else None,
                 "music_on": bool(e and e.music_on),
                 "lines": [{"n": n, "text": t} for n, t in self._lines if n > since],
+                "heard": [{"n": n, "text": t} for n, t in self._heard if n > since],
                 "last": self._seq,
             }
 

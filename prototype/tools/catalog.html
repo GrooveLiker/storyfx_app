@@ -100,6 +100,9 @@
   button.act.danger { border-color: var(--stub); color: var(--stub); }
   button.act.on { background: var(--accent); color: var(--bg); }
   .note { color: var(--muted); font-size: 12px; }
+  .note.err { color: var(--stub); font-weight: 600; font-size: 13px; }
+  .staleBanner { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: var(--stub-weak); color: var(--stub);
+                 border: 1px solid var(--stub); }
   .statusgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
   .statusgrid > div { display: flex; flex-direction: column; gap: 2px; }
   .statusgrid .wide { grid-column: 1 / -1; }
@@ -144,30 +147,23 @@
   </div>
 </header>
 
+<div class="wrap staleBanner" id="staleBanner" hidden>
+  Каталог запущен со старым кодом — озвучка текста не будет работать. Закройте окно консоли каталога и запустите
+  <b>run_catalog.cmd</b> заново, затем обновите страницу.
+</div>
+
 <section class="wrap live" id="live">
   <div class="card">
-    <label for="story" class="label">Текст рассказа — фразы через точку или с новой строки</label>
-    <textarea id="story" rows="5" placeholder="Жили-были дед да баба в деревне. Испекла баба колобок…"></textarea>
-    <div class="examples">
-      <span class="label">Примеры:</span>
-      <button class="chip" data-example="kolobok">Колобок</button>
-      <button class="chip" data-example="chase">Погоня</button>
-      <button class="chip" data-example="tavern">Таверна и гроза</button>
-      <button class="chip" data-example="sea">Море и дракон</button>
-    </div>
+    <label for="story" class="label">Рассказ — пишите по ходу рассказа или диктуйте. Слово звучит, когда дописано (пробел); фраза закрывается точкой, «!», «?» или Enter.</label>
+    <textarea id="story" rows="8" placeholder="Нажмите «Начать озвучку» и рассказывайте: Жили-были дед да баба в деревне…"></textarea>
     <div class="liverow">
-      <div class="chips" id="tempoChips" title="Темп подачи текста — звукооператор его слышит">
-        <span class="label">Темп:</span>
-        <button class="chip" data-tempo="slow" aria-pressed="false">спокойно</button>
-        <button class="chip" data-tempo="normal" aria-pressed="true">обычно</button>
-        <button class="chip" data-tempo="fast" aria-pressed="false">быстро</button>
-      </div>
-      <div class="spacer"></div>
-      <button class="act primary" id="sayBtn">▶ Озвучить</button>
+      <button class="act primary" id="startBtn">▶ Начать озвучку</button>
       <button class="act" id="micBtn">🎤 Диктовать</button>
       <button class="act" id="musicBtn">♪ Музыка</button>
-      <button class="act danger" id="stopBtn">■ Стоп</button>
+      <div class="spacer"></div>
+      <button class="act danger" id="stopBtn" title="Тишина и рассказ с чистого листа">■ Стоп</button>
     </div>
+    <div class="note" id="watchNote">Озвучка выключена — нажмите «Начать озвучку». Учитывается то, что вы допишете после этого.</div>
     <div class="note">Звук идёт из колонок этого компьютера — тот же движок, что в приложении. Диктовка распознаётся на компьютере (Vosk), голос не сохраняется; лучше в наушниках.</div>
   </div>
 
@@ -281,20 +277,20 @@ function toggleCard(key) {
 
 // ---------- «Найти другие», «Свой файл», «Не нужен» ----------
 const searchOpen = new Set();
-const watching = new Set();
+const jobsWatched = new Set();
 
 function watchJob(key) {
   /** Поиск на Freesound идёт в фоне — спрашиваем сервер, пока не закончится. */
-  if (watching.has(key)) return;
-  watching.add(key);
+  if (jobsWatched.has(key)) return;
+  jobsWatched.add(key);
   const tick = async () => {
     try {
       const it = await (await fetch(`/api/item?key=${encodeURIComponent(key)}`)).json();
       if (it.job && it.job.state === "running") { setTimeout(tick, 1500); return; }
-      watching.delete(key);
+      jobsWatched.delete(key);
       replaceItem(it);
       if (it.job) toast(`${it.id}: ${it.job.msg}`);
-    } catch (e) { watching.delete(key); }
+    } catch (e) { jobsWatched.delete(key); }
   };
   setTimeout(tick, 1500);
 }
@@ -468,31 +464,116 @@ const SCENES = { forest: "Лес", meadow: "Поле, луг", river: "Река"
   tavern: "Таверна", city: "Город", battle: "Битва", home: "Изба, дом", village: "Деревня", swamp: "Болото" };
 const OVERLAYS = { rain: "дождь", storm: "гроза", wind: "ветер", snow: "снег", fire: "костёр", night: "ночь" };
 const MOODS = { calm: "спокойное", cheerful: "весёлое", tense: "тревожное", action: "динамичное" };
-const EXAMPLES = {
-  kolobok: "Жили-были дед да баба в деревне. Испекла баба колобок и положила на окошко. Покатился колобок в лес. Навстречу ему заяц. Потом вышла лиса и все засмеялись.",
-  chase: "Вдруг в лесу стало тихо и страшно. Из темноты завыл волк. Бегите скорее! За ними началась погоня, кони мчатся во весь опор.",
-  tavern: "Начался сильный дождь, и герои поспешили в таверну. Хозяин высыпал на прилавок горсть золотых монет. Вдруг разразилась гроза.",
-  sea: "Маленький кораблик плыл по синему морю. Ночью на небе светили звёзды. Вдруг из воды показался дракон и громко зарычал.",
-};
-let tempo = "normal", lastLine = 0, live = {};
+let lastLine = 0, live = {};
 
-document.querySelectorAll("[data-example]").forEach(b => b.addEventListener("click", () => {
-  document.getElementById("story").value = EXAMPLES[b.dataset.example];
-}));
-document.getElementById("tempoChips").addEventListener("click", e => {
-  const b = e.target.closest("[data-tempo]"); if (!b) return;
-  tempo = b.dataset.tempo;
-  document.querySelectorAll("#tempoChips [data-tempo]").forEach(c => c.setAttribute("aria-pressed", c === b));
-});
-document.getElementById("sayBtn").addEventListener("click", async () => {
-  const text = document.getElementById("story").value.trim();
-  if (!text) { toast("Напишите текст или выберите пример"); return; }
-  try { const r = await post("/api/live/say", { text, tempo }); toast(`Озвучиваю: фраз — ${r.phrases}`); }
-  catch (e) { toast(e.message); }
+// ---------- рассказчик пишет в поле: система следит за дописанным ----------
+const story = document.getElementById("story");
+let watching = false, lastPartial = "", queue = Promise.resolve();
+const said = new Map();                 // уже озвученные фразы (по содержанию) → сколько раз
+const HAS_WORD = /[\p{L}\d]/u;
+
+const norm = s => s.toLowerCase().replace(/ё/g, "е").replace(/[^\p{L}\d\s-]/gu, " ").replace(/\s+/g, " ").trim();
+
+function splitText(text) {
+  /** Закрытые фразы (до . ! ? … или перевода строки) и недописанный хвост. */
+  const done = [];
+  let rest = text, m;
+  while ((m = rest.match(/[.!?…\n]/))) { done.push(rest.slice(0, m.index + 1)); rest = rest.slice(m.index + 1); }
+  return { done, tail: rest };
+}
+
+function tailWords(tail) {
+  const cut = Math.max(tail.lastIndexOf(" "), tail.lastIndexOf("\t"));   // только дописанные слова
+  return cut >= 0 ? tail.slice(0, cut).trim() : "";
+}
+
+function rememberAll() {
+  /** Всё, что сейчас в поле, — уже сказано: не озвучивать (старт, пауза, «Стоп»). */
+  said.clear();
+  const { done, tail } = splitText(story.value);
+  done.forEach(markSaid);
+  lastPartial = tailWords(tail);
+}
+
+function markSaid(phrase) {
+  const k = norm(phrase);
+  if (k) said.set(k, (said.get(k) || 0) + 1);
+}
+
+let sendError = "";
+
+function showSendError(msg) {
+  /** Ошибка видна постоянно под полем (всплывашку легко не заметить), пока очередная отправка не пройдёт. */
+  sendError = msg;
+  const note = document.getElementById("watchNote");
+  note.classList.toggle("err", !!msg);
+  if (msg) note.textContent = "Озвучка не работает: " + msg;
+  else setWatchNote();
+}
+
+function send(text, final) {
+  /** По порядку: «слышу …» и закрытые фразы должны прийти в движок так, как их писали. */
+  queue = queue.then(() => post("/api/live/text", { text, final }))
+    .then(() => { if (sendError) showSendError(""); })
+    .catch(e => {
+      if (/нет такого действия/.test(e.message)) {          // старый сервер: страница новая, код — нет
+        document.getElementById("staleBanner").hidden = false;
+        showSendError("каталог запущен со старым кодом — перезапустите run_catalog.cmd");
+      } else showSendError(e.message);
+    });
+}
+
+function watchText() {
+  /** Учёт по фразам, а не по позиции символа: исправили первую строку — остальные не озвучиваются заново.
+      Фраза, которой ещё не было (или встречается больше раз, чем уже сказана), — новая. */
+  if (!watching) return;
+  const { done, tail } = splitText(story.value);
+  const seen = new Map();
+  for (const p of done) {
+    const k = norm(p);
+    if (!k || !HAS_WORD.test(p)) continue;
+    const n = (seen.get(k) || 0) + 1;
+    seen.set(k, n);
+    if (n > (said.get(k) || 0)) { send(p, true); said.set(k, n); lastPartial = ""; }
+  }
+  const partial = tailWords(tail);
+  if (partial && partial !== lastPartial && HAS_WORD.test(partial)) { send(partial, false); lastPartial = partial; }
+}
+story.addEventListener("input", watchText);
+
+function setWatching(on) {
+  watching = on;
+  if (on) { rememberAll(); story.focus(); }
+  const b = document.getElementById("startBtn");
+  b.textContent = on ? "⏸ Пауза" : "▶ Начать озвучку";
+  b.classList.toggle("on", on);
+  if (!sendError) setWatchNote();
+}
+
+function setWatchNote() {
+  document.getElementById("watchNote").textContent = watching
+    ? "Озвучка идёт: пишите рассказ — слово звучит после пробела, фраза закрывается точкой, «!», «?» или Enter."
+    : "Озвучка выключена — нажмите «Начать озвучку». Учитывается то, что вы допишете после этого.";
+}
+
+function appendHeard(text) {
+  /** Фраза из диктовки — в поле, к рассказу; она уже озвучена, второй раз не отправляем. */
+  const v = story.value;
+  story.value = v + (v && !/\s$/.test(v) ? " " : "") + text[0].toUpperCase() + text.slice(1) + ". ";
+  markSaid(text); lastPartial = "";
+  story.scrollTop = story.scrollHeight;
+}
+
+document.getElementById("startBtn").addEventListener("click", () => {
+  if (live.status !== "ready") { post("/api/live/start", {}).then(applyState); toast("Движок загружается — несколько секунд"); return; }
+  setWatching(!watching);
 });
 document.getElementById("micBtn").addEventListener("click", () => post("/api/live/mic", { on: !live.listening }).then(applyState).catch(e => toast(e.message)));
 document.getElementById("musicBtn").addEventListener("click", () => post("/api/live/music", { on: !live.music_on }).then(applyState).catch(e => toast(e.message)));
-document.getElementById("stopBtn").addEventListener("click", () => post("/api/live/stop", {}).then(applyState).catch(e => toast(e.message)));
+document.getElementById("stopBtn").addEventListener("click", () => {
+  setWatching(false);
+  post("/api/live/stop", {}).then(applyState).catch(e => toast(e.message));
+});
 
 function kindOf(line) {
   if (/СЦЕНА|СЛОЙ/.test(line)) return "k-scene";
@@ -505,14 +586,20 @@ function kindOf(line) {
 
 function applyState(s) {
   live = s;
+  if (s.stale) document.getElementById("staleBanner").hidden = false;
   const eng = { idle: "не запущен", loading: "загружается… (несколько секунд)", ready: "готов", error: "ошибка: " + s.error };
-  document.getElementById("stEngine").textContent = s.busy ? "озвучивает…" : s.listening ? "слушает микрофон" : eng[s.status];
+  document.getElementById("stEngine").textContent = s.listening ? "слушает микрофон" : watching && s.status === "ready" ? "следит за текстом" : eng[s.status];
+  const startBtn = document.getElementById("startBtn");
+  startBtn.disabled = s.status === "loading";
+  if (s.status === "loading") startBtn.textContent = "загружается…";
+  else if (!watching) startBtn.textContent = "▶ Начать озвучку";
   document.getElementById("stScene").textContent = SCENES[s.scene] || "—";
   document.getElementById("stOverlays").textContent = s.overlays.map(o => OVERLAYS[o] || o).join(", ") || "—";
   document.getElementById("stMood").textContent = MOODS[s.mood] || "—";
   document.getElementById("stStage").textContent = (s.on_stage || []).join(" · ") || "никого";   // в именах уже есть запятые: «Дед, старик»
   document.getElementById("stTension").style.width = ((s.intensity ?? 0) * 100) + "%";
   document.getElementById("stPartial").textContent = s.partial ? "слышу: " + s.partial : "";
+  for (const h of s.heard || []) if (h.n > lastLine) appendHeard(h.text);
   const mic = document.getElementById("micBtn");
   mic.textContent = s.listening ? "■ Стоп микрофон" : "🎤 Диктовать"; mic.classList.toggle("on", s.listening);
   const mus = document.getElementById("musicBtn");
@@ -522,8 +609,8 @@ function applyState(s) {
   for (const l of s.lines || []) {
     if (l.n <= lastLine) continue;
     log.append(el("div", { class: kindOf(l.text) }, l.text));
-    lastLine = l.n;
   }
+  lastLine = Math.max(lastLine, s.last ?? 0);   // и журнал, и фразы диктовки — один счётчик
   if (atBottom) log.scrollTop = log.scrollHeight;
 }
 

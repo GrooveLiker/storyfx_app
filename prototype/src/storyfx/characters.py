@@ -1,8 +1,9 @@
 """Персонажи: звук при появлении в рассказе (медведь — рык, старик — кряхтение).
 
 Наблюдатель находит упоминания; кто на сцене, решает модель мира (world.py, D-011):
-«появился» — если его не было на сцене (впервые, ушёл — «заяц убежал», или давно молчали,
-CHARACTER_REINTRO_S). Отрицание («медведя не было») — не упоминание.
+«появился» — если его не было на сцене (впервые, ушёл — «заяц убежал», или о нём молчали
+CHARACTER_REINTRO_PHRASES фраз). Отрицание («медведя не было») и сравнение («как медведь») — не упоминание.
+Обращение («ты, старый пёс») — не появление. После предлога («я у дедушки ушёл») — не тот, кто уходит.
 Пересечения имён: длинное имя важнее («дед мороз» — мороз, не дед).
 """
 from __future__ import annotations
@@ -15,7 +16,7 @@ import yaml
 
 from . import config
 from .actions import split_clauses
-from .textnorm import Pattern, find_matches, is_negated, parse_pattern, tokenize
+from .textnorm import Pattern, find_matches, is_comparison, is_negated, parse_pattern, tokenize
 from .world import Mention, WorldState
 
 
@@ -25,11 +26,13 @@ class Character:
     sound: str
     names: list[Pattern]
     title: str = ""          # для людей: «Медведь», «Баба-яга» (каталог звуков, журнал)
+    quiet_moods: tuple[str, ...] = ()   # в этих настроениях голос молчит: детский смех, когда ребёнка уносят гуси
 
 
 def load_characters(path: Path = config.DATA_DIR / "characters.yaml") -> list[Character]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return [Character(cid, c["sound"], [parse_pattern(n) for n in c["names"]], c.get("title", cid))
+    return [Character(cid, c["sound"], [parse_pattern(n) for n in c["names"]], c.get("title", cid),
+                      tuple(c.get("quiet_moods", ())))
             for cid, c in raw["characters"].items()]
 
 
@@ -37,6 +40,12 @@ def _absent_after(tokens, end: int, window: int = 4) -> bool:
     """«медведя в лесу не было», «волка нигде нет» — персонажа нет. «медведь не спал» — есть."""
     after = [t.word for t in tokens[end + 1:end + 1 + window]]
     return "нет" in after or any(a == "не" and b.startswith("был") for a, b in zip(after, after[1:]))
+
+
+def _is_address(tokens, start: int) -> bool:
+    """«что ты наделал, старый пёс» — обращение к собеседнику: это не появление собаки."""
+    before = tokens[max(0, start - config.ADDRESS_WINDOW): start]
+    return any(t.word in config.ADDRESS_WORDS for t in before)
 
 
 def load_leave_words(path: Path = config.DATA_DIR / "characters.yaml") -> list[Pattern]:
@@ -84,18 +93,25 @@ class CharacterTracker:
                 if span & taken:
                     continue                 # слово уже занято более длинным именем
                 taken |= span
-                if is_negated(tokens, m.start, end=m.end) or _absent_after(tokens, m.end):
-                    continue
-                if ch.id not in found:
-                    found[ch.id] = Mention(ch, tokens[m.start].word, m.start)
+                if is_negated(tokens, m.start, end=m.end) or _absent_after(tokens, m.end) \
+                        or is_comparison(tokens, m.start):
+                    continue                 # «медведя не было», «сильный, как медведь»
+                new = Mention(ch, tokens[m.start].word, m.start,
+                              obj=m.start > 0 and tokens[m.start - 1].word in config.OBJECT_PREPOSITIONS,
+                              address=_is_address(tokens, m.start))
+                old = found.get(ch.id)
+                # одно упоминание на персонажа: прямое («лиса пришла») важнее косвенного («у лисы», «ты, лиса»)
+                if old is None or ((old.obj or old.address) and not (new.obj or new.address)):
+                    found[ch.id] = new
         mentions = sorted(found.values(), key=lambda m: m.position)
         for s, e in leave_clauses:
-            inside = [m for m in mentions if s <= m.position <= e]
-            if not inside:
+            in_clause = [m for m in mentions if s <= m.position <= e]
+            # «я у дедушки ушёл» — дедушка дополнение (после «у»), уходит не он
+            leaving = [m for m in in_clause if not m.obj and not m.address]
+            if not in_clause:
                 # «заяц испугался и убежал» — подлежащее не повторили: уходит последний названный до этой части
-                before = [m for m in mentions if m.position < s]
-                inside = before[-1:]
-            for m in inside:
+                leaving = [m for m in mentions if m.position < s and not m.obj and not m.address][-1:]
+            for m in leaving:
                 m.leaving = True
         return mentions
 

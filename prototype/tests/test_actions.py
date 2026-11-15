@@ -75,3 +75,42 @@ def test_false_friends(actions, clock):
     m = matcher(actions, clock)
     for i, text in enumerate(["он громко сказал", "совсем стемнело", "огромный зал", "во дворе было тихо"]):
         assert sounds(m.process(text, i, final=True)) == [], text
+
+
+# ---------- голое слово-якорь и набор текста (задача 23, шаг 3) ----------
+def fixed_answer(m, label, conf):
+    """Подменить классификатор: проверяем правила решения, а не качество модели."""
+    m.classify = lambda group, ctx: (label, conf)
+    return m
+
+
+def test_bare_anchor_needs_confidence_before_phrase_end(actions, clock):
+    """«…так воем и воют» — после якоря ни слова: до конца фразы решаем только при уверенности ≥ 0,6."""
+    m = fixed_answer(matcher(actions, clock), "wolf_howl", 0.45)
+    m.process("а волны так воем и воют", 0, final=False)
+    clock.advance(1.0)                                            # все сроки прошли
+    assert sounds(m.process("а волны так воем и воют", 0, final=False)) == []
+    m2 = fixed_answer(matcher(actions, clock), "wolf_howl", 0.7)
+    m2.process("вдалеке завыли", 1, final=False)
+    clock.advance(1.0)
+    assert sounds(m2.process("вдалеке завыли", 1, final=False)) == ["wolf_howl"]
+
+
+def test_one_word_clause_needs_confidence_at_phrase_end(actions, clock):
+    """В части фразы одно слово-якорь — смысла мало и в конце фразы."""
+    m = fixed_answer(matcher(actions, clock), "wolf_howl", 0.45)
+    assert sounds(m.process("а волны так воем и воют", 0, final=True)) == []
+    assert sounds(m.process("в лесу завыли волки", 1, final=True)) == ["wolf_howl"]   # есть контекст
+
+
+def test_typing_mode_waits_for_meaning_not_clock(actions, clock):
+    """Набор текста: слова идут медленно — не решать по секундомеру; ранний выстрел — только при ясном смысле."""
+    m = fixed_answer(matcher(actions, clock), "roar", 0.5)
+    m.use_deadlines = False
+    m.process("а медведь зарычал", 0, final=False)
+    clock.advance(5.0)                                            # человек думает над следующим словом
+    assert sounds(m.process("а медведь зарычал и", 0, final=False)) == []
+    assert sounds(m.process("а медведь зарычал и пошёл", 0, final=True)) == ["roar"]   # фраза закрыта
+    m2 = fixed_answer(matcher(actions, clock), "roar", 0.9)
+    m2.use_deadlines = False
+    assert sounds(m2.process("медведь зарычал грозно", 1, final=False)) == ["roar"]    # смысл ясен — сразу

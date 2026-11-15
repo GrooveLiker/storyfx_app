@@ -93,7 +93,7 @@ class StoryEngine:
             if self.characters:
                 self._direct(w.observe_characters(self.characters.observe(ev.text)))
             self._action_in_utt = False
-            self._observe_scene(self.scenes.add_utterance(ev.text))
+            self._observe_scene(self.scenes.add_utterance(ev.text, speech=ev.speech))   # реплики не меняют место
             if self.moods:
                 self._observe_mood(self.moods.add_utterance(ev.text))
             self._utt += 1
@@ -147,6 +147,10 @@ class StoryEngine:
                 if self._action_in_utt:
                     # «волк завыл»: звук действия уже есть — второй звук того же момента будет кашей
                     self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (в фразе уже был звук действия)")
+                    continue
+                if self.mood in ch.quiet_moods:
+                    # детский смех, когда мальчика уносят гуси, — не к месту
+                    self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (не к настроению: {self.mood})")
                     continue
                 played = self._play(ch.sound)
                 self.events.append(("char", c.id))

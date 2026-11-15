@@ -17,6 +17,7 @@ from . import config
 class TextEvent:
     text: str
     final: bool
+    speech: tuple[bool, ...] | None = None   # для текста: какие слова (как в tokenize) — в реплике героя
 
 
 class VoskStream:

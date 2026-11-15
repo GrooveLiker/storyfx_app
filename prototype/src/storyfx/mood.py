@@ -27,6 +27,10 @@ def load_moods(path: Path = config.DATA_DIR / "moods.yaml") -> tuple[list[Scene]
 
 
 def make_mood_tracker(moods: list[Scene], default: str, embedder=None) -> SceneTracker:
-    t = SceneTracker(list(moods), [], embedder=embedder)
+    """Настроение меняется реже сцены: музыка, прыгающая каждые полминуты, мешает (задача 23, шаг 4).
+    Ключевое слово («страшно», «погоня») — сразу; по смыслу — свои порог, подтверждения и выдержка."""
+    t = SceneTracker(list(moods), [], embedder=embedder,
+                     threshold=config.MOOD_THRESHOLD, margin=config.MOOD_MARGIN, confirm=config.MOOD_CONFIRM,
+                     min_words=config.SCENE_MIN_WORDS, min_dwell=config.MOOD_MIN_DWELL)
     t.current = default
     return t

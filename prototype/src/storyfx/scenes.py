@@ -9,7 +9,7 @@ import numpy as np
 import yaml
 
 from . import config
-from .textnorm import Pattern, find_matches, is_negated, parse_pattern, tokenize
+from .textnorm import Pattern, find_matches, is_comparison, is_negated, parse_pattern, tokenize
 
 
 class Embedder(Protocol):
@@ -64,8 +64,14 @@ def load_scenes(path: Path = config.DATA_DIR / "scenes.yaml") -> tuple[list[Scen
     return scenes, overlays
 
 
-def _has_match(patterns: list[Pattern], tokens) -> bool:
-    return any(not is_negated(tokens, m.start, end=m.end) for p in patterns for m in find_matches(p, tokens))
+def _real(tokens, m) -> bool:
+    """Совпадение — по-настоящему: не «дождя не было» и не «как гроза разразилась»."""
+    return not is_negated(tokens, m.start, end=m.end) and not is_comparison(tokens, m.start)
+
+
+def _has_match(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
+    """skip — номера слов в репликах героев: «Печка, печка, скажи…» не переносит рассказ в избу."""
+    return any(_real(tokens, m) and m.start not in skip for p in patterns for m in find_matches(p, tokens))
 
 
 @dataclass
@@ -82,9 +88,16 @@ class SceneTracker:
     embedder: Embedder | None = None
     current: str | None = None
     active_overlays: list[str] = field(default_factory=list)
+    # Смена ПО СМЫСЛУ (ключевое слово в фразе меняет сразу). Настроение — тот же трекер со своими числами (mood.py).
+    threshold: float = config.SCENE_THRESHOLD   # оценка победителя не ниже
+    margin: float = config.SCENE_MARGIN         # и выше текущей хотя бы на столько
+    confirm: int = config.SCENE_CONFIRM         # столько оценок подряд
+    min_words: int = config.SCENE_MIN_WORDS     # меньше слов в окне — не оценивать (2–3 слова — шум)
+    min_dwell: int = config.SCENE_MIN_DWELL     # фраз после смены, пока по смыслу не меняем
     _words: list[str] = field(default_factory=list)
     _candidate: str | None = None
     _candidate_hits: int = 0
+    _since_switch: int = 10**6                   # фраз с последней смены
     last_scores: dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -95,18 +108,23 @@ class SceneTracker:
                     s.centroid = v / (np.linalg.norm(v) + 1e-9)
 
     # ---------- входы ----------
-    def add_utterance(self, text: str) -> list[Change]:
-        """Финальная фраза: обновить окно, наложения и сцену."""
+    def add_utterance(self, text: str, speech: tuple[bool, ...] | None = None) -> list[Change]:
+        """Финальная фраза: обновить окно, наложения и сцену.
+        speech — какие слова в репликах героев (для текста): они не меняют место и погоду
+        и не попадают в окно смысла сцены («— Печка, печка, скажи…» — разговор, а не изба)."""
         tokens = tokenize(text)
-        self._words = (self._words + [t.word for t in tokens])[-config.SCENE_WINDOW_WORDS:]
-        changes = self._update_overlays(tokens)
+        spoken = frozenset(i for i, f in enumerate(speech) if f) if speech and len(speech) == len(tokens) else frozenset()
+        narration = [t.word for i, t in enumerate(tokens) if i not in spoken]
+        self._words = (self._words + narration)[-config.SCENE_WINDOW_WORDS:]
+        self._since_switch += 1
+        changes = self._update_overlays(tokens, spoken)
         # Явное ключевое слово сцены в последней фразе — сменить сразу («вошли в таверну»).
-        explicit = [s for s in self.scenes if _has_match(s.keywords, tokens)]
+        explicit = [s for s in self.scenes if _has_match(s.keywords, tokens, spoken)]
         if explicit:
             vec = self._embed(" ".join(self._words))
             best = max(explicit, key=lambda s: self._score(s, vec, tokens))
             if best.id != self.current:
-                self._set(best.id)
+                self._set(best.id, keep=len(narration))  # новое место названо в этой фразе — помним только её
                 changes.append(Change("scene", best.id, "ключевое слово"))
                 return changes
         c = self.evaluate()
@@ -116,35 +134,41 @@ class SceneTracker:
 
     def evaluate(self, extra_text: str = "") -> Change | None:
         """Оценка по смыслу всего окна (с гистерезисом). Можно вызывать с текущим частичным текстом."""
-        text = " ".join(self._words + tokenize_words(extra_text))
-        if not text.strip():
+        words = self._words + tokenize_words(extra_text)
+        if not words:
             return None
+        text = " ".join(words)
         tokens = tokenize(text)
         vec = self._embed(text)
         scores = {s.id: self._score(s, vec, tokens) for s in self.scenes}
         self.last_scores = scores
+        if len(words) < self.min_words or self._since_switch < self.min_dwell:
+            return None       # «на опушке» — ещё не смысл; только что сменили — дать постоять
         best_id = max(scores, key=scores.get)
         best = scores[best_id]
         cur = scores.get(self.current, 0.0) if self.current else 0.0
-        if best_id == self.current or best < config.SCENE_THRESHOLD or best - cur < config.SCENE_MARGIN:
+        if best_id == self.current or best < self.threshold or best - cur < self.margin:
             self._candidate, self._candidate_hits = None, 0
             return None
         if best_id == self._candidate:
             self._candidate_hits += 1
         else:
             self._candidate, self._candidate_hits = best_id, 1
-        if self._candidate_hits >= config.SCENE_CONFIRM:
+        if self._candidate_hits >= self.confirm:
             self._set(best_id)
             return Change("scene", best_id, f"по смыслу ({best:.2f})")
         return None
 
     # ---------- внутреннее ----------
-    def _set(self, scene_id: str) -> None:
+    def _set(self, scene_id: str, keep: int | None = None) -> None:
         self.current = scene_id
         self._candidate, self._candidate_hits = None, 0
+        self._since_switch = 0
         # Перешли в новое место — слова о прежнем месте больше не голосуют (иначе «…в деревне… пошли в лес…»
-        # возвращало деревню: её ключевое слово ещё в окне). D-011.
-        self._words = self._words[-config.SCENE_KEEP_AFTER_SWITCH:]
+        # возвращало деревню: её ключевое слово ещё в окне). D-011. Место названо в фразе — оставляем только её
+        # (при коротких фразах «последние 8 слов» захватывали «…в деревне» из предыдущей).
+        n = keep if keep is not None else config.SCENE_KEEP_AFTER_SWITCH
+        self._words = self._words[-n:] if n > 0 else []
 
     def _embed(self, text: str) -> np.ndarray | None:
         return self.embedder.encode([text])[0] if self.embedder is not None else None
@@ -153,16 +177,17 @@ class SceneTracker:
         sim = 0.0
         if vec is not None and scene.centroid is not None:
             sim = float(vec @ scene.centroid)
-        kw = sum(1 for p in scene.keywords for m in find_matches(p, tokens) if not is_negated(tokens, m.start, end=m.end))
+        kw = sum(1 for p in scene.keywords for m in find_matches(p, tokens) if _real(tokens, m))
         return sim + min(kw, 3) * config.KEYWORD_BONUS
 
-    def _update_overlays(self, tokens) -> list[Change]:
+    def _update_overlays(self, tokens, spoken: frozenset[int] = frozenset()) -> list[Change]:
         changes = []
         for o in self.overlays:
-            if o.id in self.active_overlays and _has_match(o.stop, tokens):
+            if o.id in self.active_overlays and _has_match(o.stop, tokens, spoken):
                 self.active_overlays.remove(o.id)
                 changes.append(Change("overlay_off", o.id, "стоп-фраза"))
-            elif o.id not in self.active_overlays and _has_match(o.keywords, tokens) and not _has_match(o.stop, tokens):
+            elif (o.id not in self.active_overlays and _has_match(o.keywords, tokens, spoken)
+                  and not _has_match(o.stop, tokens, spoken)):
                 self.active_overlays.append(o.id)
                 changes.append(Change("overlay_on", o.id, "ключевое слово"))
                 while len(self.active_overlays) > config.MAX_OVERLAYS:

@@ -11,10 +11,6 @@ pytestmark = pytest.mark.slow
 WAV_DIR = TESTS / "wav"
 
 
-@pytest.fixture(scope="module")
-def embedder():
-    from storyfx.scenes import RuBertEmbedder
-    return RuBertEmbedder()
 
 
 def test_scenarios_text_with_embedder(actions, scene_data, scenarios, clock, embedder):
@@ -48,6 +44,11 @@ MEANING_CASES = [
     ("прошло много лет", "steps", None),
     ("мальчишка с разбегу прыгнул в озеро", "water", "splash"),
     ("лучник натянул тетиву и выстрелил", "arrow", "arrow"),
+    ("егерь вскинул ружьё и выстрелил по кабану", "gun", "gunshot"),
+    ("ружьё пылилось за печкой", "gun", None),
+    ("рыбак размахнулся и закинул невод в озеро", "water", "splash"),
+    ("лошадка весело везла сани по сугробам", "sleigh", "sleigh_bells"),
+    ("ночью лёд на озере трещал от мороза", "frost", "frost_crackle"),
 ]
 
 
@@ -166,6 +167,12 @@ def test_place_does_not_revert(actions, scene_data, clock, embedder):
                    "Покатился колобок в лес. А медведя в лесу не было. Колобок катился дальше по тропинке.", clock)
     scenes = [i for k, i in eng.events if k == "scene"]
     assert scenes[:2] == ["village", "forest"] and eng.world.place == "forest", scenes
+    # короткие фразы (найдено в браузере): «…в деревне. Покатился колобок в лес. …дождь» — не назад в деревню
+    eng = make_engine(actions, scene_data, clock, embedder)
+    feed_text(eng, "Жили-были дед да баба в деревне. Покатился колобок в лес. Навстречу вышел заяц. "
+                   "Вдруг начался сильный дождь.", clock)
+    scenes = [i for k, i in eng.events if k == "scene"]
+    assert scenes == ["village", "forest"] and ("overlay_on", "rain") in eng.events, scenes
 
 
 def test_action_latency(actions, scene_data, scenarios, clock, embedder):
