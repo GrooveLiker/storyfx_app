@@ -34,7 +34,7 @@ if ((Test-Path sounds\chosen.yaml) -and ((Test-Path .freesound_key) -or $env:FRE
 }
 & $py tools\gen_sounds.py
 & $py tools\gen_music.py
-& $py tools\make_test_wavs.py
+& $py tools\make_test_wavs.py --stories   # и сказки — для прогона голосом (tests/test_stories.py)
 
 Write-Host "6/6 Быстрые тесты"
 & $py -m pytest -m "not slow" -q

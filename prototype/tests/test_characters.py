@@ -95,11 +95,23 @@ def test_engine_plays_character_sound(actions, scene_data, characters, clock):
 def test_engine_skips_character_if_action_sounded(actions, scene_data, characters, clock):
     from storyfx.asr import TextEvent
     eng = make_engine(actions, scene_data, clock, characters=characters)
-    eng._action_in_utt = True          # как если бы в этой фразе уже прозвучал звук действия
+    eng._last_action_t = clock()       # как если бы только что прозвучал звук действия
     eng.on_text(TextEvent("пришёл медведь", True))
     assert ("char", "bear") not in eng.events
-    eng.on_text(TextEvent("пришла лиса", True))   # следующая фраза — уже без звука действия
+    clock.advance(config.CHARACTER_AFTER_ACTION_S + 0.1)
+    eng.on_text(TextEvent("пришла лиса", True))   # звук действия был давно
     assert ("char", "fox") in eng.events
+
+
+def test_character_voiced_in_long_phrase_after_early_action(actions, scene_data, characters, clock):
+    """Голос: Vosk отдаёт фразу до паузы (бывает 30 слов). Звук действия в начале длинной фразы
+    не глушит персонажа, названного через 10 секунд."""
+    from storyfx.asr import TextEvent
+    eng = make_engine(actions, scene_data, clock, characters=characters)
+    eng._last_action_t = clock()
+    clock.advance(10.0)
+    eng.on_text(TextEvent("и тут на ёлке появился морозко", True))
+    assert ("char", "frost") in eng.events
 
 
 def test_voice_quiet_in_wrong_mood(actions, scene_data, characters, mood_data, clock):

@@ -103,6 +103,19 @@ def test_one_word_clause_needs_confidence_at_phrase_end(actions, clock):
     assert sounds(m.process("в лесу завыли волки", 1, final=True)) == ["wolf_howl"]   # есть контекст
 
 
+def test_late_decision_needs_late_conf_then_waits_for_phrase_end(actions, clock):
+    """Голос: «девка завыла ну…» — после жёсткого срока нужно ACTION_LATE_CONF (0,5); меньше — решаем
+    в конце фразы с полным контекстом, где хватает ACTION_MIN_CONF."""
+    m = fixed_answer(matcher(actions, clock), "wolf_howl", 0.46)
+    m.process("а девка завыла ну", 0, final=False)
+    clock.advance(1.0)                                            # все сроки прошли
+    assert sounds(m.process("а девка завыла ну", 0, final=False)) == []
+    m2 = fixed_answer(matcher(actions, clock), "wolf_howl", 0.55)
+    m2.process("в лесу завыли волки", 1, final=False)
+    clock.advance(1.0)
+    assert sounds(m2.process("в лесу завыли волки", 1, final=False)) == ["wolf_howl"]
+
+
 def test_typing_mode_waits_for_meaning_not_clock(actions, clock):
     """Набор текста: слова идут медленно — не решать по секундомеру; ранний выстрел — только при ясном смысле."""
     m = fixed_answer(matcher(actions, clock), "roar", 0.5)

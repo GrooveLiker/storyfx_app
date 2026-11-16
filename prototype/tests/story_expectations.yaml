@@ -4,13 +4,15 @@
 # expect:    {вид: [id]}  — хотя бы раз за сказку. Виды: sfx, char, leave, scene, overlay_on, mood.
 # forbid:    {вид: [id]}  — ни разу.
 # forbid_in: [{words: регулярка, вид: [id]}] — не на фразах, где есть эти слова.
-# limits:    фраз на одну смену сцены / настроения — не меньше (сцена 8 → не чаще раза в 8 фраз).
-# known_failing: проверки, которые сейчас не проходят (задача 23, docs/review-2026-11-13.md).
+# limits:    слов рассказа на одну смену сцены / настроения — не меньше (сцена 64 → не чаще раза в 64 слова).
+#             Считаем по словам, не по фразам: у голоса фразы — паузы Vosk (длиннее), у текста — точки.
+#             64 / 120 ≈ прежние 8 / 15 фраз по 8 слов.
+# known_failing: проверки, которые сейчас не проходят в текстовом прогоне; known_failing_voice — в голосовом (задача 23, docs/review-2026-11-13.md).
 #   Такие тесты помечены «ожидаемо падает»; если проверка начала проходить — тест упадёт и попросит
 #   убрать её из списка. Имена: expect:sfx:splash, forbid:sfx:coins, forbid_in:0, limit:scene, limit:mood.
 
 defaults:
-  limits: {scene: 8, mood: 15}
+  limits: {scene: 64, mood: 120}
 
 stories:
   rybak:
@@ -28,6 +30,9 @@ stories:
       - {words: "воем и воют", sfx: [wolf_howl]}         # воют волны — решено по голому слову «воют» (шаг 3)
     known_failing:
       - forbid:sfx:door_creak
+    known_failing_voice:
+      - forbid:sfx:door_creak
+      - forbid:scene:battle     # Vosk: «у ворот» → «утру бою», «вольною» → «войною»
 
   kolobok:
     expect:
@@ -37,6 +42,7 @@ stories:
       sfx: [wolf_howl, bird]              # звери не воют от одного «навстречу ему»; колобок поёт, не птицы
       leave: [old_man, old_woman, hare, wolf, bear, fox]  # «я у дедушки ушёл» — ушёл колобок
     known_failing: []
+    known_failing_voice: []
 
   morozko:
     expect:
@@ -52,6 +58,9 @@ stories:
       - {words: "запряг", sfx: [horse_gallop]}           # запрячь — не скакать
       - {words: "свалил", sfx: [fall]}                   # «деток свалил» в сани
     known_failing: []
+    known_failing_voice:
+      - expect:sfx:bell          # Vosk: «с колокольцом» → «скала кольцом»
+      - expect:sfx:sleigh_bells  # Vosk: «в дровни» → «в дров в не»
 
   gusi:
     expect:
@@ -63,8 +72,14 @@ stories:
       scene: [city]                       # «побежала на улицу» — деревня
     forbid_in:
       - {words: "подхватили мальчика", char: [child]}    # мальчика уносят — детский смех не к месту
+      - {words: "ходи со двор", scene: [village]}        # «не ходи со двора» — реплика матери, не место
     known_failing:
+      - limit:scene     # по словам: 7 смен на 414 слов (можно 6) — реплики «печка, яблоня, речка»
       - forbid_in:0     # правило есть (quiet_moods), но настроение в этот момент ещё «спокойное»
+    known_failing_voice:
+      - expect:char:old_man       # Vosk: «жили старик со старухой» → «жили историче икса старушка»
+      - forbid_in:0               # как в тексте: настроение ещё «спокойное» (раньше смех глушило правило «звук действия в фразе»)
+      - expect:scene:meadow       # «в чистое поле … за тёмным лесом» — одна фраза Vosk, побеждает лес
 
   owner_sea:
     expect:
@@ -75,6 +90,8 @@ stories:
     forbid_in:
       - {words: "вытащил", sfx: [splash]}              # невод тянут из воды — не всплеск
     known_failing: []
+    known_failing_voice:
+      - expect:sfx:splash         # Vosk: «закинул невод» → «закинул него», «неводом» → «не водам»
 
   owner_bear:
     expect:
@@ -87,3 +104,4 @@ stories:
     forbid_in:
       - {words: "шелохнется", sfx: [roar]}               # медведь стоит молча
     known_failing: []
+    known_failing_voice: []

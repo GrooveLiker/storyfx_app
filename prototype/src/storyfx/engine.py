@@ -10,7 +10,8 @@ from . import config
 from .asr import TextEvent
 from .characters import CharacterTracker
 from .mixer import SoundMixer
-from .scenes import SceneTracker
+from .scenes import SceneTracker, tokenize_words
+from .speech import SpeechCues
 from .actions import ActionMatcher
 from .world import WorldChange, WorldState
 
@@ -30,8 +31,9 @@ class StoryEngine:
     mixer: SoundMixer | None = None                 # звукооператор: напряжённость → громкость слоёв (mixer.py)
     world: WorldState | None = None                 # модель мира (world.py); создаётся сама
     muted: set[str] = field(default_factory=set)    # выключенные звуки «kind/id» (data/muted.yaml)
+    speech_cues: SpeechCues | None = None           # голос без кавычек: реплики по словам (speech.py)
     _said_intensity: float = -1.0
-    _action_in_utt: bool = False                    # в текущей фразе уже прозвучал звук действия
+    _last_action_t: float | None = None             # когда прозвучал последний звук действия
     _utt: int = 0
     _last_eval: float = 0.0
     _t0: float = field(default=0.0)
@@ -92,8 +94,7 @@ class StoryEngine:
             self._say(f"фраза: {ev.text}")
             if self.characters:
                 self._direct(w.observe_characters(self.characters.observe(ev.text)))
-            self._action_in_utt = False
-            self._observe_scene(self.scenes.add_utterance(ev.text, speech=ev.speech))   # реплики не меняют место
+            self._observe_scene(self.scenes.add_utterance(ev.text, speech=self._speech(ev)))   # реплики не меняют место
             if self.moods:
                 self._observe_mood(self.moods.add_utterance(ev.text))
             self._utt += 1
@@ -106,6 +107,16 @@ class StoryEngine:
             if self.moods:
                 m = self.moods.evaluate(ev.text)
                 self._observe_mood([m] if m else [])
+
+    def _speech(self, ev: TextEvent) -> tuple[bool, ...] | None:
+        """Какие слова фразы — реплика героя. Текст: по кавычкам (ev.speech). Голос: угадать по словам."""
+        if ev.speech is not None or not self.speech_cues:
+            return ev.speech
+        mask = self.speech_cues.guess(tokenize_words(ev.text))
+        if self.verbose and any(mask):
+            words = tokenize_words(ev.text)
+            self._say("  реплика «" + " ".join(w for w, m in zip(words, mask) if m) + "» — место и погоду не меняет")
+        return mask
 
     def _observe_scene(self, changes) -> None:
         out, weather = [], []
@@ -134,19 +145,24 @@ class StoryEngine:
     def _ambience(self, amb: str | None) -> str | None:
         return None if amb and f"ambience/{amb}" in self.muted else amb
 
+    def _action_just_sounded(self) -> bool:
+        t = self._last_action_t
+        return t is not None and self.clock() - t <= config.CHARACTER_AFTER_ACTION_S
+
     def _direct(self, changes: list[WorldChange]) -> None:
         weather_changed = False
         for c in changes:
             if c.kind == "action":
                 played = self._play(c.id)
-                self._action_in_utt = True
+                self._last_action_t = self.clock()
                 self.events.append(("sfx", c.id))
                 self._say(f"ДЕЙСТВИЕ {c.id:<12} ← {c.reason}{'' if played else ' — звук выключен'}")
             elif c.kind == "enter":
                 ch = next(x for x in self.characters.characters if x.id == c.id)
-                if self._action_in_utt:
-                    # «волк завыл»: звук действия уже есть — второй звук того же момента будет кашей
-                    self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (в фразе уже был звук действия)")
+                if self._action_just_sounded():
+                    # «волк завыл»: звук действия только что был — второй звук того же момента будет кашей.
+                    # По времени, а не «в той же фразе»: у Vosk фраза — до паузы, бывает в 30 слов.
+                    self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (только что был звук действия)")
                     continue
                 if self.mood in ch.quiet_moods:
                     # детский смех, когда мальчика уносят гуси, — не к месту

@@ -203,7 +203,7 @@ class ActionMatcher:
                         label, conf = self.classify(g, ctx)
                         need = (config.ACTION_EARLY_CONF if waited < config.ACTION_SOFT_DEADLINE_S
                                 else config.ACTION_SOFT_CONF if waited < config.ACTION_HARD_DEADLINE_S
-                                else config.ACTION_MIN_CONF)
+                                else config.ACTION_LATE_CONF)
                         if bare:
                             # голое слово: «…так воем и воют» (волны) — по одному слову решаем, только если уверены
                             if label == NONE:

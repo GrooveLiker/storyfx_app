@@ -2,6 +2,7 @@
 
   python tools/story_run.py tests/stories/rybak.txt            # отчёт в консоль
   python tools/story_run.py tests/stories/*.txt --out report.md # в файл
+  python tools/story_run.py tests/stories/rybak.txt --voice    # голосом: TTS-WAV → Vosk → движок
 
 Без звука (NullAudio), с моделью смысла. Время — условное: слово ≈ 0,4 с (≈ 2,5 сл/с), пауза после фразы 0,8 с,
 так задержки и звукооператор ведут себя как с рассказчиком. Фраза — до . ! ? … ; (как пауза в речи).
@@ -65,6 +66,7 @@ def build(clock: Clock, log, embedder=None):
     from storyfx.mixer import SoundMixer
     from storyfx.mood import load_moods, make_mood_tracker
     from storyfx.scenes import RuBertEmbedder, SceneTracker, load_scenes
+    from storyfx.speech import load_speech_cues
     emb = embedder or RuBertEmbedder()
     scenes, overlays = load_scenes()
     moods, default = load_moods()
@@ -75,6 +77,7 @@ def build(clock: Clock, log, embedder=None):
         moods=make_mood_tracker(moods, default, embedder=emb), music_on=True,
         characters=CharacterTracker(load_characters(), clock=clock),
         mixer=SoundMixer(clock=clock, mood=default),   # без muted.yaml: проверяем решения, а не выбор владельца
+        speech_cues=load_speech_cues(),                 # голос: реплики по словам (у текста — кавычки)
     )
 
 
@@ -109,6 +112,42 @@ def run(text: str, engine=None) -> list[PhraseResult]:
     return out
 
 
+def run_wav(path: Path, engine=None, model_dir: Path | None = None) -> list[PhraseResult]:
+    """Прогон ГОЛОСОМ: WAV → Vosk → движок, как с микрофоном (без кавычек и знаков, фразы — по паузам).
+    Время — по записи. Фраза в отчёте — то, что Vosk отдал финальным результатом."""
+    import wave
+
+    from storyfx import config
+    from storyfx.asr import VoskStream
+    clock = Clock()
+    lines: list[str] = []
+    eng = engine(clock, lines.append) if engine else build(clock, lines.append)
+    out, start = [], 0
+    stream = VoskStream(model_dir) if model_dir else VoskStream()   # другая модель — для сравнения
+    block = int(config.SAMPLE_RATE * config.BLOCK_SECONDS)
+
+    def feed(events):
+        nonlocal start
+        for ev in events:
+            eng.on_text(ev)
+            if ev.final:
+                keep = [re.sub(r"^\[\s*[\d.]+s\]\s*", "", l) for l in lines if "фраза:" not in l]
+                out.append(PhraseResult(ev.text, keep, list(eng.events[start:])))
+                lines.clear()
+                start = len(eng.events)
+
+    with wave.open(str(path), "rb") as w:
+        while data := w.readframes(block):
+            clock.t += len(data) / 2 / config.SAMPLE_RATE
+            feed(stream.feed(data))
+    feed(stream.flush())
+    return out
+
+
+def story_wav(name: str) -> Path:
+    return ROOT / "tests" / "wav" / "stories" / f"{name}.wav"
+
+
 def report(name: str, result: list[PhraseResult]) -> str:
     rows = [f"## {name}", ""]
     for i, r in enumerate(result, 1):
@@ -123,9 +162,15 @@ def main() -> int:
     ap.add_argument("files", nargs="+", type=Path)
     ap.add_argument("--wiki", action="store_true", help="файлы — wikitext с Викитеки: очистить разметку")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--vosk-model", type=Path, help="с --voice: другая модель Vosk (папка), по умолчанию — из config")
+    ap.add_argument("--voice", action="store_true",
+                    help="голосом: tests/wav/stories/<имя>.wav через Vosk (сделать: make_test_wavs.py --stories)")
     args = ap.parse_args()
     parts = []
     for f in args.files:
+        if args.voice:
+            parts.append(report(f"{f.stem} (голос)", run_wav(story_wav(f.stem), model_dir=args.vosk_model)))
+            continue
         text = f.read_text(encoding="utf-8")
         if args.wiki:
             text = clean_wikitext(text)

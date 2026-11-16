@@ -36,10 +36,10 @@ prototype/
   verify.ps1       — полная проверка (3 уровня)
   requirements.txt — зависимости с версиями
   src/storyfx/     — код: три звена (D-011) — asr (слух) → наблюдатели actions/scenes/characters/mood → world (модель мира) → engine+mixer+audio (звукорежиссёр)
-  data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка), muted.yaml (выключенные звуки)
+  data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка), muted.yaml (выключенные звуки), speech.yaml (признаки реплики героя в голосе)
   sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор), LICENSES.md, own/ (свои записи, в git)
   models/          — модель Vosk (скачивается init.ps1, не в git)
-  tools/           — story_run.py (прогон сказки через движок → отчёт), catalog.py + live_session.py (каталог звуков и тест озвучки в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
+  tools/           — story_run.py (прогон сказки через движок → отчёт; --voice — голосом), compare_asr.py (сравнение моделей Vosk), catalog.py + live_session.py (каталог звуков и тест озвучки в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
   tests/           — pytest
 ```
 
@@ -69,7 +69,7 @@ prototype/
 Уровни (по порядку, нельзя пропускать):
 1. **Статика** — `python -m compileall src` и загрузка YAML-данных.
 2. **Поведение** — `pytest -m "not slow"`: логика действий (части фразы, ожидание контекста, отрицания, кулдаун), сцены, движок с фейковым аудио.
-3. **Сквозная** — `pytest -m slow`: TTS-WAV → Vosk → ожидаемые события; выбор звука по смыслу на новых фразах (порог 85%); угадывание сцен; **сказки целиком** (`tests/test_stories.py`: что обязано / не должно прозвучать, `tests/story_expectations.yaml`; известные ошибки — `known_failing`, исправил → убрать из списка).
+3. **Сквозная** — `pytest -m slow`: TTS-WAV → Vosk → ожидаемые события; выбор звука по смыслу на новых фразах (порог 85%); угадывание сцен; **сказки целиком** (`tests/test_stories.py`: что обязано / не должно прозвучать, `tests/story_expectations.yaml`; каждая сказка — текстом и голосом (TTS → Vosk, WAV: `tools/make_test_wavs.py --stories`); известные ошибки — `known_failing` / `known_failing_voice`, исправил → убрать из списка).
 
 Ручная проверка (её агент сделать не может): живой микрофон, оценка на слух — записывать результаты в PROGRESS.md.
 
