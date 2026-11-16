@@ -77,6 +77,14 @@ def test_false_friends(actions, clock):
         assert sounds(m.process(text, i, final=True)) == [], text
 
 
+def test_gunshot_is_not_arrow_topic(actions, clock):
+    """«Выстрел» — якорь только ружья: «выстрелил, не попал» не должно давать стрелу (задача 23)."""
+    m = matcher(actions, clock)
+    groups = {d.group for d in m.process("он выстрелил и не попал", 0, final=True)}
+    assert "arrow" not in groups and "gun" in groups
+    assert "arrow" in {d.group for d in m.process("лучник прицелился", 1, final=True)}
+
+
 # ---------- голое слово-якорь и набор текста (задача 23, шаг 3) ----------
 def fixed_answer(m, label, conf):
     """Подменить классификатор: проверяем правила решения, а не качество модели."""

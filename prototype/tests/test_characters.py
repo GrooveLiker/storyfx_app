@@ -128,3 +128,18 @@ def test_voice_quiet_in_wrong_mood(actions, scene_data, characters, mood_data, c
     happy.world.mood = "cheerful"
     feed_text(happy, "Во двор прибежала девочка.", clock)
     assert ("sfx", "child_laugh") in happy.audio.log                    # весело — смех к месту
+
+
+def test_speaker_leaves_not_named_beast(tracker):
+    """Песня колобка: «я от волка ушёл» — уходит колобок («я»), волк остаётся (задача 23)."""
+    leaving = {m.character.id: m.leaving for m in tracker.observe("не ешь меня серый волк я от волка ушёл")}
+    assert leaving.get("wolf") is False
+    # без «я» правило прежнее: подлежащее не повторили — уходит последний названный
+    leaving = {m.character.id: m.leaving for m in tracker.observe("заяц испугался и убежал")}
+    assert leaving.get("hare") is True
+
+
+def test_witness_does_not_leave(tracker):
+    """«и опять укатился только медведь его и видел» — укатился колобок, медведь остаётся (задача 23)."""
+    leaving = {m.character.id: m.leaving for m in tracker.observe("и опять укатился только медведь его и видел")}
+    assert leaving.get("bear") is False

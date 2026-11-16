@@ -53,6 +53,16 @@ def load_leave_words(path: Path = config.DATA_DIR / "characters.yaml") -> list[P
     return [parse_pattern(p) for p in raw.get("leave", [])]
 
 
+def load_leave_speakers(path: Path = config.DATA_DIR / "characters.yaml") -> set[str]:
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return set(raw.get("leave_speakers", []))
+
+
+def load_leave_witness(path: Path = config.DATA_DIR / "characters.yaml") -> tuple[set[str], list[Pattern]]:
+    raw = yaml.safe_load(path.read_text(encoding="utf-8")).get("leave_witness", {})
+    return set(raw.get("before", [])), [parse_pattern(p) for p in raw.get("after", [])]
+
+
 @dataclass
 class Appearance:
     character: Character
@@ -66,6 +76,7 @@ class CharacterTracker:
     characters: list[Character]
     clock: Callable[[], float] = None
     leave_words: list[Pattern] | None = None
+    leave_speakers: set[str] | None = None   # «я», «мы»…: уходит говорящий, а не названный ранее
     world: WorldState | None = None      # свой мир — для process() без движка (тесты, отладка)
 
     def __post_init__(self):
@@ -77,6 +88,9 @@ class CharacterTracker:
             self.clock = time.monotonic
         if self.leave_words is None:
             self.leave_words = load_leave_words()
+        if self.leave_speakers is None:
+            self.leave_speakers = load_leave_speakers()
+        self._witness_before, self._witness_after = load_leave_witness()
         if self.world is None:
             self.world = WorldState(clock=self.clock)
 
@@ -108,12 +122,26 @@ class CharacterTracker:
             in_clause = [m for m in mentions if s <= m.position <= e]
             # «я у дедушки ушёл» — дедушка дополнение (после «у»), уходит не он
             leaving = [m for m in in_clause if not m.obj and not m.address]
-            if not in_clause:
-                # «заяц испугался и убежал» — подлежащее не повторили: уходит последний названный до этой части
+            speakers = [i for i in range(s, e + 1) if tokens[i].word in self.leave_speakers]
+            if speakers:
+                # «не ешь меня серый волк я от волка ушёл» (Vosk без запятых — одна часть фразы):
+                # уходит «я»; персонаж может уходить, только если назван после «я» и не дополнением
+                leaving = [m for m in leaving if m.position > speakers[-1]]
+            elif not in_clause:
+                # «заяц испугался и убежал» — подлежащее не повторили: уходит последний названный до этой части.
+                # Но «я от волка ушёл» — уходит говорящий, волк остаётся.
                 leaving = [m for m in mentions if m.position < s and not m.obj and not m.address][-1:]
             for m in leaving:
-                m.leaving = True
+                if not self._is_witness(tokens, m.position):
+                    m.leaving = True
         return mentions
+
+    def _is_witness(self, tokens, pos: int) -> bool:
+        """«…укатился, только медведь его и видел» — медведь смотрит вслед, уходит не он."""
+        if pos == 0 or tokens[pos - 1].word not in self._witness_before:
+            return False
+        after = tokens[pos + 1: pos + 4]
+        return any(find_matches(p, after) for p in self._witness_after)
 
     def process(self, text: str) -> list[Appearance]:
         """Удобство без движка: кто появился (по своему миру)."""
