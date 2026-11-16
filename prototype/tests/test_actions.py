@@ -135,3 +135,9 @@ def test_typing_mode_waits_for_meaning_not_clock(actions, clock):
     m2 = fixed_answer(matcher(actions, clock), "roar", 0.9)
     m2.use_deadlines = False
     assert sounds(m2.process("медведь зарычал грозно", 1, final=False)) == ["roar"]    # смысл ясен — сразу
+
+
+def test_cast_net_anchor(actions, clock):
+    """Vosk: «закинул невод» → «закинул не вот» — глагол «закинул» сам открывает тему воды (задача 23)."""
+    m = matcher(actions, clock)
+    assert "water" in {d.group for d in m.process("как то старик закинул не вот", 0, final=True)}

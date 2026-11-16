@@ -28,10 +28,8 @@ stories:
       - {words: "грозн", overlay_on: [storm]}             # «грозная стража» — не гроза
       - {words: "крестьянк", scene: [village]}           # «не хочу быть крестьянкой» — речь, не место
       - {words: "воем и воют", sfx: [wolf_howl]}         # воют волны — решено по голому слову «воют» (шаг 3)
-    known_failing:
-      - forbid:sfx:door_creak
+    known_failing: []          # «с дубовыми вороты» — описание избы, исправлено примерами door._none (2026-11-16)
     known_failing_voice:
-      - forbid:sfx:door_creak
       - forbid:scene:battle     # Vosk: «у ворот» → «утру бою», «вольною» → «войною»
 
   kolobok:
@@ -73,13 +71,9 @@ stories:
     forbid_in:
       - {words: "подхватили мальчика", char: [child]}    # мальчика уносят — детский смех не к месту
       - {words: "ходи со двор", scene: [village]}        # «не ходи со двора» — реплика матери, не место
-    known_failing:
-      - limit:scene     # по словам: 7 смен на 414 слов (можно 6) — реплики «печка, яблоня, речка»
-      - forbid_in:0     # правило есть (quiet_moods), но настроение в этот момент ещё «спокойное»
+    known_failing: []          # смех при «подхватили мальчика» — quiet_words; «за тёмным лесом» — far_words (2026-11-16)
     known_failing_voice:
       - expect:char:old_man       # Vosk: «жили старик со старухой» → «жили историче икса старушка»
-      - forbid_in:0               # как в тексте: настроение ещё «спокойное» (раньше смех глушило правило «звук действия в фразе»)
-      - expect:scene:meadow       # «в чистое поле … за тёмным лесом» — одна фраза Vosk, побеждает лес
 
   owner_sea:
     expect:
@@ -88,10 +82,9 @@ stories:
       overlay_on: [storm]                 # «начался шторм»
       sfx: [thunder, splash]              # «гром гремит», «закинул невод»
     forbid_in:
-      - {words: "вытащил", sfx: [splash]}              # невод тянут из воды — не всплеск
+      - {words: "(?<!не )вытащил", sfx: [splash]}      # невод тянут из воды — не всплеск; «закинул… и не вытащил» — всплеск есть
     known_failing: []
-    known_failing_voice:
-      - expect:sfx:splash         # Vosk: «закинул невод» → «закинул него», «неводом» → «не водам»
+    known_failing_voice: []       # «закинул не вот» — якорь «закинул*» (2026-11-16)
 
   owner_bear:
     expect:

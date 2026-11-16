@@ -34,6 +34,8 @@ class StoryEngine:
     speech_cues: SpeechCues | None = None           # голос без кавычек: реплики по словам (speech.py)
     _said_intensity: float = -1.0
     _last_action_t: float | None = None             # когда прозвучал последний звук действия
+    _phrase: str = ""                               # текущая финальная фраза (для quiet_words персонажей)
+    _last_action_sound: str | None = None           # какой звук действия прозвучал последним
     _utt: int = 0
     _last_eval: float = 0.0
     _t0: float = field(default=0.0)
@@ -93,6 +95,7 @@ class StoryEngine:
         if ev.final:
             self._say(f"фраза: {ev.text}")
             if self.characters:
+                self._phrase = ev.text
                 self._direct(w.observe_characters(self.characters.observe(ev.text)))
             self._observe_scene(self.scenes.add_utterance(ev.text, speech=self._speech(ev)))   # реплики не меняют место
             if self.moods:
@@ -155,14 +158,24 @@ class StoryEngine:
             if c.kind == "action":
                 played = self._play(c.id)
                 self._last_action_t = self.clock()
+                self._last_action_sound = c.id
                 self.events.append(("sfx", c.id))
                 self._say(f"ДЕЙСТВИЕ {c.id:<12} ← {c.reason}{'' if played else ' — звук выключен'}")
             elif c.kind == "enter":
                 ch = next(x for x in self.characters.characters if x.id == c.id)
+                if self._action_just_sounded() and self._last_action_sound in ch.voiced_by + (ch.sound,):
+                    # «Морозко на ёлке потрескивает»: треск и был его голосом — это и есть появление
+                    self.events.append(("char", c.id))
+                    self._say(f"ПЕРСОНАЖ {c.id:<12} ← «{c.word}» (голос уже прозвучал: {self._last_action_sound})")
+                    continue
                 if self._action_just_sounded():
                     # «волк завыл»: звук действия только что был — второй звук того же момента будет кашей.
                     # По времени, а не «в той же фразе»: у Vosk фраза — до паузы, бывает в 30 слов.
                     self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (только что был звук действия)")
+                    continue
+                if ch.is_quiet_in(self._phrase):
+                    # «подхватили мальчика, унесли» — настроение ещё «спокойное», но смех уже не к месту
+                    self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (не к месту: слова фразы)")
                     continue
                 if self.mood in ch.quiet_moods:
                     # детский смех, когда мальчика уносят гуси, — не к месту

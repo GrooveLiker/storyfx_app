@@ -27,12 +27,19 @@ class Character:
     names: list[Pattern]
     title: str = ""          # для людей: «Медведь», «Баба-яга» (каталог звуков, журнал)
     quiet_moods: tuple[str, ...] = ()   # в этих настроениях голос молчит: детский смех, когда ребёнка уносят гуси
+    quiet_words: tuple[Pattern, ...] = ()   # с этими словами в фразе голос молчит сразу («подхватили мальчика»)
+    voiced_by: tuple[str, ...] = ()         # звуки действий, которые и есть его голос (frost_crackle — Морозко)
+
+    def is_quiet_in(self, text: str) -> bool:
+        tokens = tokenize(text)
+        return any(find_matches(p, tokens) for p in self.quiet_words)
 
 
 def load_characters(path: Path = config.DATA_DIR / "characters.yaml") -> list[Character]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     return [Character(cid, c["sound"], [parse_pattern(n) for n in c["names"]], c.get("title", cid),
-                      tuple(c.get("quiet_moods", ())))
+                      tuple(c.get("quiet_moods", ())), tuple(parse_pattern(w) for w in c.get("quiet_words", ())),
+                      tuple(c.get("voiced_by", ())))
             for cid, c in raw["characters"].items()]
 
 

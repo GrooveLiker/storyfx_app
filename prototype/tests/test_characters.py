@@ -143,3 +143,24 @@ def test_witness_does_not_leave(tracker):
     """«и опять укатился только медведь его и видел» — укатился колобок, медведь остаётся (задача 23)."""
     leaving = {m.character.id: m.leaving for m in tracker.observe("и опять укатился только медведь его и видел")}
     assert leaving.get("bear") is False
+
+
+def test_action_sound_that_is_the_voice_counts(actions, scene_data, characters, clock):
+    """«Морозко на ёлке потрескивает»: треск (frost_crackle) — и есть его голос, это появление (задача 23)."""
+    from storyfx.asr import TextEvent
+    eng = make_engine(actions, scene_data, clock, characters=characters)
+    eng._last_action_t, eng._last_action_sound = clock(), "frost_crackle"
+    eng.on_text(TextEvent("вдруг слышит морозко на ёлке", True))
+    assert ("char", "frost") in eng.events
+    assert ("sfx", "ice") not in eng.audio.log            # второй звук того же момента не играем
+
+
+def test_child_quiet_when_carried_off(actions, scene_data, characters, clock):
+    """«подхватили мальчика, унесли» — настроение ещё спокойное, но смех ребёнка не к месту (задача 23)."""
+    from storyfx.asr import TextEvent
+    eng = make_engine(actions, scene_data, clock, characters=characters)
+    eng.on_text(TextEvent("налетели гуси лебеди подхватили мальчика унесли на крылышках", True))
+    assert ("char", "child") not in eng.events
+    other = make_engine(actions, scene_data, clock, characters=characters)
+    other.on_text(TextEvent("на лужайке весело играл мальчик", True))   # без этих слов — смех звучит
+    assert ("char", "child") in other.events

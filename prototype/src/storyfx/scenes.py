@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from functools import lru_cache
 from typing import Protocol
 
 import numpy as np
@@ -69,6 +70,23 @@ def _real(tokens, m) -> bool:
     return not is_negated(tokens, m.start, end=m.end) and not is_comparison(tokens, m.start)
 
 
+@lru_cache(maxsize=1)
+def _far_words() -> frozenset[str]:
+    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
+    return frozenset(raw.get("far_words", []))
+
+
+def _is_far(tokens, start: int) -> bool:
+    """«пропали за тёмным лесом», «вдалеке за рекой» — место вдали, не то, где герой."""
+    return any(t.word in _far_words() for t in tokens[max(0, start - 2): start])
+
+
+def _has_place(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
+    """Как _has_match, но место вдали («за лесом») не считается: сцену меняет только то, где герой."""
+    return any(_real(tokens, m) and m.start not in skip and not _is_far(tokens, m.start)
+               for p in patterns for m in find_matches(p, tokens))
+
+
 def _has_match(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
     """skip — номера слов в репликах героев: «Печка, печка, скажи…» не переносит рассказ в избу."""
     return any(_real(tokens, m) and m.start not in skip for p in patterns for m in find_matches(p, tokens))
@@ -119,7 +137,7 @@ class SceneTracker:
         self._since_switch += 1
         changes = self._update_overlays(tokens, spoken)
         # Явное ключевое слово сцены в последней фразе — сменить сразу («вошли в таверну»).
-        explicit = [s for s in self.scenes if _has_match(s.keywords, tokens, spoken)]
+        explicit = [s for s in self.scenes if _has_place(s.keywords, tokens, spoken)]
         if explicit:
             vec = self._embed(" ".join(self._words))
             best = max(explicit, key=lambda s: self._score(s, vec, tokens))

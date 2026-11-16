@@ -153,3 +153,10 @@ def test_weather_in_speech_does_not_add_overlay(scene_data):
     assert ("overlay_on", "storm") not in kinds(t.add_utterance(text, speech=mask))
     text, mask = _speech("На море разыгралась буря")
     assert ("overlay_on", "storm") in kinds(t.add_utterance(text, speech=mask))
+
+
+def test_far_place_does_not_switch(scene_data):
+    """«выбежала в чистое поле… пропали за тёмным лесом» — героиня в поле, лес вдали (задача 23)."""
+    t = tracker(scene_data)
+    t.add_utterance("выбежала в чистое поле метнулись вдалеке гуси лебеди и пропали за тёмным лесом")
+    assert t.current == "meadow"
