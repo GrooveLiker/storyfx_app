@@ -31,6 +31,7 @@ def make_mood_tracker(moods: list[Scene], default: str, embedder=None) -> SceneT
     Ключевое слово («страшно», «погоня») — сразу; по смыслу — свои порог, подтверждения и выдержка."""
     t = SceneTracker(list(moods), [], embedder=embedder,
                      threshold=config.MOOD_THRESHOLD, margin=config.MOOD_MARGIN, confirm=config.MOOD_CONFIRM,
-                     min_words=config.SCENE_MIN_WORDS, min_dwell=config.MOOD_MIN_DWELL)
+                     min_words=config.SCENE_MIN_WORDS, min_dwell=config.MOOD_MIN_DWELL,
+                     intensity=config.MOOD_INTENSITY)   # напряжение растёт — без выдержки
     t.current = default
     return t

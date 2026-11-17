@@ -109,7 +109,20 @@ def run(text: str, engine=None) -> list[PhraseResult]:
         keep = [re.sub(r"^\[\s*[\d.]+s\]\s*", "", l) for l in lines if "фраза:" not in l]
         shown = p.replace(SPEECH_OPEN, "«").replace(SPEECH_CLOSE, "»")
         out.append(PhraseResult(shown, keep, list(eng.events[start:])))
+    _finish(eng, clock, out, lines)
     return out
+
+
+def _finish(eng, clock, out, lines) -> None:
+    """Рассказ кончился: тишина, движок доигрывает отложенное (eng.tick) — в итог последней фразы."""
+    start = len(eng.events)
+    lines.clear()
+    clock.t += 3.0
+    eng.tick()
+    if out and len(eng.events) > start:
+        last = out[-1]
+        last.log.extend(re.sub(r"^\[\s*[\d.]+s\]\s*", "", l) for l in lines)
+        last.events.extend(eng.events[start:])
 
 
 def run_wav(path: Path, engine=None, model_dir: Path | None = None) -> list[PhraseResult]:
@@ -139,8 +152,10 @@ def run_wav(path: Path, engine=None, model_dir: Path | None = None) -> list[Phra
     with wave.open(str(path), "rb") as w:
         while data := w.readframes(block):
             clock.t += len(data) / 2 / config.SAMPLE_RATE
+            eng.tick()
             feed(stream.feed(data))
     feed(stream.flush())
+    _finish(eng, clock, out, lines)
     return out
 
 

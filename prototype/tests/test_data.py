@@ -60,7 +60,8 @@ def test_sounds_are_sane():
         rms = float(np.sqrt(np.mean(x ** 2)))
         assert sr == 44100, path
         assert np.all(np.isfinite(x)), path
-        assert rms > 0.01, f"{path.name}: почти тишина (rms={rms:.4f})"
+        # 0.005: редкий треск костра (Campfire 02) после выравнивания громкости — 0.009; это не тишина
+        assert rms > 0.005, f"{path.name}: почти тишина (rms={rms:.4f})"
         if path.parent.name == "ambience":
             assert len(x) / sr >= 8, f"{path.name}: фон короче 8 с"
 

@@ -85,6 +85,18 @@ def test_gunshot_is_not_arrow_topic(actions, clock):
     assert "arrow" in {d.group for d in m.process("лучник прицелился", 1, final=True)}
 
 
+def test_live_log_anchors(actions, clock):
+    """Живой тест 2026-11-17: «скрипка» давала стук в дверь; «уронил», «бросился в реку» — без звука."""
+    m = matcher(actions, clock)
+    groups = lambda text, i: {d.group for d in m.process(text, i, final=True)}
+    g = groups("музыканты заиграли на скрипке", 0)
+    assert "door" not in g and "music" in g
+    assert "door" in groups("калитка тихо скрипнула", 1)
+    assert "fall" in groups("все стулья уронил", 2)
+    assert "fall" in groups("все столы перевернул", 3)
+    assert "water" in groups("бросился в реку", 4)
+
+
 # ---------- голое слово-якорь и набор текста (задача 23, шаг 3) ----------
 def fixed_answer(m, label, conf):
     """Подменить классификатор: проверяем правила решения, а не качество модели."""

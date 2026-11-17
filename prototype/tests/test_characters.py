@@ -36,7 +36,9 @@ def tracker(characters, clock):
     ("это был конец пути", []),                              # не конь
     ("бабушка собирала ягоды", ["old_woman"]),               # «ягоды» — не Яга
     ("конь вороной", ["horse"]),                             # масть, не ворона
-    ("пришла змея", []),                                     # «змея» — не Змей Горыныч (и звука змеи по «змее» нет)
+    ("пришла змея", []),
+    ("и говорит бармен", ["innkeeper"]),                     # живой тест 2026-11-17
+    ("музыканты на сцене", ["bard"]),                                     # «змея» — не Змей Горыныч (и звука змеи по «змее» нет)
 ])
 def test_names(tracker, text, expected):
     assert ids(tracker, text) == expected
@@ -102,6 +104,19 @@ def test_engine_defers_character_if_action_sounded(actions, scene_data, characte
     clock.advance(config.CHARACTER_AFTER_ACTION_S + 0.1)
     eng.on_text(TextEvent("пришла лиса", True))   # звук действия отзвучал: медведь — отложенный, лиса — сразу
     assert ("char", "bear") in eng.events and ("char", "fox") in eng.events
+
+
+def test_deferred_voice_played_in_silence(actions, scene_data, characters, clock):
+    """Рассказчик замолчал после фразы со звуком действия — отложенный голос играет и без новых слов (tick)."""
+    from storyfx.asr import TextEvent
+    eng = make_engine(actions, scene_data, clock, characters=characters)
+    eng._last_action_t = clock()
+    eng.on_text(TextEvent("пришёл медведь", True))
+    eng.tick()
+    assert ("char", "bear") not in eng.events          # звук действия ещё звучит
+    clock.advance(config.CHARACTER_AFTER_ACTION_S + 0.1)
+    eng.tick()
+    assert ("char", "bear") in eng.events
 
 
 def test_deferred_voice_dropped_if_too_late(actions, scene_data, characters, clock):

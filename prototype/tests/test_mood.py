@@ -32,6 +32,37 @@ def test_negated_keyword_keeps_mood(mood_data):
     assert t.current == "calm"
 
 
+def test_live_log_keywords(mood_data):
+    """Живой тест 2026-11-17: «ворвался разбойник», «тревожное», «помчался» — музыка не менялась."""
+    t = tracker(mood_data)
+    t.add_utterance("мужик повеселел и пустился в пляс")
+    assert t.current == "cheerful"
+    t.add_utterance("в таверну ворвался разбойник")
+    assert t.current == "tense"
+    t2 = tracker(mood_data)
+    t2.add_utterance("настроение стало тревожное")
+    assert t2.current == "tense"
+    t2.add_utterance("выбежал из таверны и помчался к полю")
+    assert t2.current == "action"
+
+
+def test_escalation_skips_dwell(mood_data):
+    """После смены настроения музыка стоит MOOD_MIN_DWELL фраз — но не когда напряжение растёт."""
+    t = tracker(mood_data)
+    t.add_utterance("все засмеялись и пустились в пляс")
+    assert t.current == "cheerful"
+    want = {}
+    t._score = lambda s, vec, tokens: want.get(s.id, 0.1)
+    want.update(calm=0.9)                      # спокойнее — ждём выдержку
+    for _ in range(4):
+        t.add_utterance("слова одной длинной фразы рассказа о том что было дальше")
+    assert t.current == "cheerful"
+    want.clear(); want.update(tense=0.9)       # напряжённее — сразу (после подтверждений)
+    for _ in range(3):
+        t.add_utterance("слова одной длинной фразы рассказа о том что было дальше")
+    assert t.current == "tense"
+
+
 def engine_with_music(actions, scene_data, mood_data, clock, music_on=True):
     eng = make_engine(actions, scene_data, clock)
     eng.moods = tracker(mood_data)

@@ -125,6 +125,9 @@ class SceneTracker:
     confirm: int = config.SCENE_CONFIRM         # столько оценок подряд
     min_words: int = config.SCENE_MIN_WORDS     # меньше слов в окне — не оценивать (2–3 слова — шум)
     min_dwell: int = config.SCENE_MIN_DWELL     # фраз после смены, пока по смыслу не меняем
+    # Только для настроения: напряжённость. Переход к более напряжённому — без выдержки min_dwell
+    # (живой тест 2026-11-17: после «пустился в пляс» ворвался разбойник, а музыка ещё 90 с была весёлой).
+    intensity: dict[str, float] | None = None
     _words: list[str] = field(default_factory=list)
     _candidate: str | None = None
     _candidate_hits: int = 0
@@ -173,9 +176,11 @@ class SceneTracker:
         vec = self._embed(text)
         scores = {s.id: self._score(s, vec, tokens) for s in self.scenes}
         self.last_scores = scores
-        if len(words) < self.min_words or self._since_switch < self.min_dwell:
-            return None       # «на опушке» — ещё не смысл; только что сменили — дать постоять
+        if len(words) < self.min_words:
+            return None       # «на опушке» — ещё не смысл
         best_id = max(scores, key=scores.get)
+        if self._since_switch < self.min_dwell and not self._escalates(best_id):
+            return None       # только что сменили — дать постоять
         best = scores[best_id]
         cur = scores.get(self.current, 0.0) if self.current else 0.0
         if best_id == self.current or best < self.threshold or best - cur < self.margin:
@@ -191,6 +196,11 @@ class SceneTracker:
         return None
 
     # ---------- внутреннее ----------
+    def _escalates(self, target: str) -> bool:
+        if not self.intensity or self.current is None:
+            return False
+        return self.intensity.get(target, 0.0) > self.intensity.get(self.current, 0.0)
+
     def _set(self, scene_id: str, keep: int | None = None) -> None:
         self.current = scene_id
         self._candidate, self._candidate_hits = None, 0

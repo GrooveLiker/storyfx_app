@@ -160,6 +160,11 @@ class StoryEngine:
         self.events.append(("char", ch.id))
         self._say(f"ПЕРСОНАЖ {ch.id:<12} ← «{word}» ({ch.sound}{'' if played else ', звук выключен'}{note})")
 
+    def tick(self) -> None:
+        """Время идёт и без слов: доиграть отложенные голоса, когда рассказчик замолчал
+        («…а бард заиграл» в конце рассказа — голос трактирщика иначе ждал бы следующей фразы вечно)."""
+        self._flush_voices()
+
     def _flush_voices(self) -> None:
         """Отложенные голоса: звук действия отзвучал — сыграть их, если не ждали слишком долго."""
         if not self._pending_voices or self._action_just_sounded():

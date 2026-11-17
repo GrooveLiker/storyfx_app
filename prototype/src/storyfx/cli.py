@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from pathlib import Path
 
 from .asr import mic_events, stdin_lines, text_events, wav_events
@@ -87,12 +88,23 @@ def main(argv: list[str] | None = None) -> int:
         print("Слушаю микрофон… (Ctrl+C — выход). Лучше в наушниках, чтобы микрофон не слышал звуки.")
         events = mic_events(args.device)
 
+    # Отложенные голоса персонажей доигрываются и в тишине (engine.tick) — отдельный поток раз в 0,3 с.
+    lock, stop = threading.Lock(), threading.Event()
+
+    def ticker():
+        while not stop.wait(0.3):
+            with lock:
+                engine.tick()
+
+    threading.Thread(target=ticker, daemon=True).start()
     try:
         for ev in events:
-            engine.on_text(ev)
+            with lock:
+                engine.on_text(ev)
     except KeyboardInterrupt:
         pass
     finally:
+        stop.set()
         audio.close()
     return 0
 

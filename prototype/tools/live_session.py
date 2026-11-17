@@ -200,6 +200,8 @@ class LiveSession:
     def state(self, since: int = 0) -> dict:
         with self._lock:
             e = self.engine
+            if e is not None and self.status == "ready":
+                e.tick()                     # страница спрашивает раз в 0,4 с — заодно доиграть отложенные голоса
             return {
                 "status": self.status, "error": self.error, "listening": self.listening,
                 "partial": self.partial,
