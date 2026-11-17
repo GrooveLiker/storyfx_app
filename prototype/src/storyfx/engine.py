@@ -36,6 +36,8 @@ class StoryEngine:
     _last_action_t: float | None = None             # когда прозвучал последний звук действия
     _phrase: str = ""                               # текущая финальная фраза (для quiet_words персонажей)
     _last_action_sound: str | None = None           # какой звук действия прозвучал последним
+    # голоса персонажей, отложенные из-за звука действия: (когда отложили, id, слово) — задача 24
+    _pending_voices: list = field(default_factory=list)
     _utt: int = 0
     _last_eval: float = 0.0
     _t0: float = field(default=0.0)
@@ -68,6 +70,7 @@ class StoryEngine:
     def on_text(self, ev: TextEvent) -> None:
         if self.mixer:
             self.mixer.on_words(len(ev.text.split()), ev.final)
+        self._flush_voices()
         self._on_text(ev)
         if self.mixer:
             self._mix()
@@ -152,6 +155,24 @@ class StoryEngine:
         t = self._last_action_t
         return t is not None and self.clock() - t <= config.CHARACTER_AFTER_ACTION_S
 
+    def _voice(self, ch, word: str, note: str = "") -> None:
+        played = self._play(ch.sound)
+        self.events.append(("char", ch.id))
+        self._say(f"ПЕРСОНАЖ {ch.id:<12} ← «{word}» ({ch.sound}{'' if played else ', звук выключен'}{note})")
+
+    def _flush_voices(self) -> None:
+        """Отложенные голоса: звук действия отзвучал — сыграть их, если не ждали слишком долго."""
+        if not self._pending_voices or self._action_just_sounded():
+            return
+        now = self.clock()
+        pending, self._pending_voices = self._pending_voices, []
+        for t, cid, word in pending:
+            if now - t > config.CHARACTER_DEFER_MAX_S:
+                self._say(f"  тише   персонаж {cid:<9} ← «{word}» (ждал звука действия слишком долго)")
+                continue
+            ch = next(x for x in self.characters.characters if x.id == cid)
+            self._voice(ch, word, ", после звука действия")
+
     def _direct(self, changes: list[WorldChange]) -> None:
         weather_changed = False
         for c in changes:
@@ -168,11 +189,6 @@ class StoryEngine:
                     self.events.append(("char", c.id))
                     self._say(f"ПЕРСОНАЖ {c.id:<12} ← «{c.word}» (голос уже прозвучал: {self._last_action_sound})")
                     continue
-                if self._action_just_sounded():
-                    # «волк завыл»: звук действия только что был — второй звук того же момента будет кашей.
-                    # По времени, а не «в той же фразе»: у Vosk фраза — до паузы, бывает в 30 слов.
-                    self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (только что был звук действия)")
-                    continue
                 if ch.is_quiet_in(self._phrase):
                     # «подхватили мальчика, унесли» — настроение ещё «спокойное», но смех уже не к месту
                     self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (не к месту: слова фразы)")
@@ -181,9 +197,14 @@ class StoryEngine:
                     # детский смех, когда мальчика уносят гуси, — не к месту
                     self._say(f"  тише   персонаж {c.id:<9} ← «{c.word}» (не к настроению: {self.mood})")
                     continue
-                played = self._play(ch.sound)
-                self.events.append(("char", c.id))
-                self._say(f"ПЕРСОНАЖ {c.id:<12} ← «{c.word}» ({ch.sound}{'' if played else ', звук выключен'})")
+                if self._action_just_sounded():
+                    # «гном зажёг факел»: звук действия только что был — два звука разом будут кашей.
+                    # Голос не выбрасываем (задача 24: в ДнД персонажи часто появляются вместе с действием),
+                    # а играем, когда звук действия отзвучит (_flush_voices).
+                    self._pending_voices.append((self.clock(), c.id, c.word))
+                    self._say(f"  позже  персонаж {c.id:<9} ← «{c.word}» (сначала звук действия)")
+                    continue
+                self._voice(ch, c.word)
             elif c.kind == "leave":
                 self.events.append(("leave", c.id))
                 self._say(f"УШЁЛ     {c.id:<12} ← «{c.word}»")

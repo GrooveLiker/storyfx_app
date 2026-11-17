@@ -76,6 +76,18 @@ def _far_words() -> frozenset[str]:
     return frozenset(raw.get("far_words", []))
 
 
+@lru_cache(maxsize=1)
+def _not_place_near() -> tuple[Pattern, ...]:
+    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
+    return tuple(parse_pattern(w) for w in raw.get("not_place_near", []))
+
+
+def _not_a_place(tokens, start: int, end: int) -> bool:
+    """«вскрыл замок отмычкой» — дверной замок, а не замок короля: рядом слова про ключи и замки."""
+    near = tokens[max(0, start - 3): start] + tokens[end + 1: end + 4]
+    return any(find_matches(p, near) for p in _not_place_near())
+
+
 def _is_far(tokens, start: int) -> bool:
     """«пропали за тёмным лесом», «вдалеке за рекой» — место вдали, не то, где герой."""
     return any(t.word in _far_words() for t in tokens[max(0, start - 2): start])
@@ -84,6 +96,7 @@ def _is_far(tokens, start: int) -> bool:
 def _has_place(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
     """Как _has_match, но место вдали («за лесом») не считается: сцену меняет только то, где герой."""
     return any(_real(tokens, m) and m.start not in skip and not _is_far(tokens, m.start)
+               and not _not_a_place(tokens, m.start, m.end)
                for p in patterns for m in find_matches(p, tokens))
 
 

@@ -31,6 +31,7 @@ NONE = "_none"
 class Variant:
     id: str
     examples: list[str]
+    cues: tuple = ()          # слова-подсказки (оружие): есть в отрывке — уверенность варианта × CUE_BOOST (задача 24)
 
 
 @dataclass
@@ -58,7 +59,8 @@ def load_actions(path: Path = config.DATA_DIR / "actions.yaml") -> list[ActionGr
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     groups = []
     for gid, g in raw.items():
-        variants = [Variant(vid, list(v["examples"])) for vid, v in g["variants"].items()]
+        variants = [Variant(vid, list(v["examples"]), tuple(parse_pattern(c) for c in v.get("cues", ())))
+                    for vid, v in g["variants"].items()]
         groups.append(ActionGroup(gid, [parse_pattern(p) for p in g["topic"]], variants,
                                   float(g.get("cooldown", config.DEFAULT_COOLDOWN_S))))
     return groups
@@ -68,7 +70,8 @@ def load_actions(path: Path = config.DATA_DIR / "actions.yaml") -> list[ActionGr
 class SoftmaxClassifier:
     """Многоклассовая логистическая регрессия (numpy), обучается за доли секунды."""
 
-    def __init__(self, X: np.ndarray, labels: list[str], iters: int = 1500, lr: float = 0.5, l2: float = 1e-3):
+    def __init__(self, X: np.ndarray, labels: list[str], iters: int = 1500, lr: float = 1.5, l2: float = 1e-3):
+        # lr 0,5 → 1,5 (задача 24): с 6 вариантами в теме боя 0,5 не успевал сойтись за 1500 шагов
         self.classes = sorted(set(labels))
         y = np.array([self.classes.index(l) for l in labels])
         W = np.zeros((X.shape[1], len(self.classes)))
@@ -86,9 +89,12 @@ class SoftmaxClassifier:
         return z / z.sum(axis=-1, keepdims=True)
 
     def predict(self, x: np.ndarray) -> tuple[str, float]:
-        p = self._softmax(x @ self.W + self.b)
+        p = self.probs(x)
         i = int(p.argmax())
         return self.classes[i], float(p[i])
+
+    def probs(self, x: np.ndarray) -> np.ndarray:
+        return self._softmax(x @ self.W + self.b)
 
 
 class LexicalClassifier:
@@ -150,7 +156,16 @@ class ActionMatcher:
         clf = self._clf[group.id]
         if isinstance(clf, LexicalClassifier):
             return clf.predict_text(text)
-        return clf.predict(self.embedder.encode([text])[0])
+        p = clf.probs(self.embedder.encode([text])[0])
+        # Подсказки: «чем бьют» решает звук (булава — грохот, кинжал — укол), а маленькая модель
+        # редкие слова вроде «булава» чувствует слабо. Решает всё равно смысл — подсказка лишь перевешивает.
+        tokens = tokenize(text)
+        for v in group.variants:
+            if v.cues and v.id in clf.classes and any(find_matches(c, tokens) for c in v.cues):
+                p[clf.classes.index(v.id)] *= config.CUE_BOOST
+        p = p / p.sum()
+        i = int(p.argmax())
+        return clf.classes[i], float(p[i])
 
     def process(self, text: str, utterance_id: int, final: bool) -> list[Decision]:
         tokens = tokenize(text)
@@ -172,11 +187,17 @@ class ActionMatcher:
                 # Контекст после якоря может перейти через союз («подошла к лошадке и погладила её»),
                 # но не заходит в следующую часть с якорем той же темы — это уже другое событие.
                 limit = anchored[k + 1][0] - 2 if k + 1 < len(anchored) else len(tokens) - 1
+                # «жрица исцелила его, а плут выпил…» — после «а/но» уже другой герой, не наш контекст
+                stop = next((i for i in range(anchors[-1] + 1, limit + 1) if tokens[i].word in config.CONTEXT_STOP), None)
+                if stop is not None:
+                    limit = stop - 1
                 hi = min(limit, anchors[-1] + config.CONTEXT_AFTER)
                 # Ждём контекст: фраза закончилась, началось следующее событие темы или набралось N слов.
                 # Последние слова частичного результата Vosk ещё может переписать — отсюда запас.
-                ready = final or k + 1 < len(anchored) or len(tokens) - 1 >= anchors[-1] + config.CONTEXT_AFTER
+                ready = final or k + 1 < len(anchored) or stop is not None                     or len(tokens) - 1 >= anchors[-1] + config.CONTEXT_AFTER
                 lo = max(start, anchors[0] - config.CONTEXT_BEFORE)
+                if anchors[0] - start <= config.CONTEXT_CLAUSE_START:
+                    lo = start                      # глагол в начале части: «развернул на земле карту»
                 ctx_tokens = tokens[lo: hi + 1]
                 ctx = " ".join(t.word for t in ctx_tokens)
                 negated = any(is_negated(tokens, a) for a in anchors)

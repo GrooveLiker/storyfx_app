@@ -64,6 +64,48 @@ sfx:
   donkey_bray:    {queries: ["donkey bray", "donkey hee haw", "donkey"], min: 0.5, max: 8, cut: 3.0}
   propeller:      {queries: ["small propeller", "propeller motor", "toy propeller"], min: 0.5, max: 10, cut: 2.0}
 
+  # --- ДнД: действия (задача 24) ---
+  heavy_hit:     {queries: ["hammer hit metal", "mace impact", "anvil hit", "heavy metal impact"], min: 0.2, max: 4, cut: 1.5}
+  stab:          {queries: ["sword stab flesh", "knife stab", "dagger stab"], min: 0.1, max: 3, cut: 1.2}
+  necrotic:      {queries: ["dark magic spell", "necromancy spell", "evil magic whoosh"], min: 0.5, max: 6, cut: 3.0}
+  poison:        {queries: ["acid sizzle", "poison gas hiss", "acid burn spell"], min: 0.5, max: 6, cut: 3.0}
+  teleport:      {queries: ["teleport spell", "magic portal whoosh", "teleport sound"], min: 0.3, max: 5, cut: 2.5}
+  magic_shield:  {queries: ["magic shield spell", "force field activate", "magic barrier"], min: 0.3, max: 5, cut: 2.5}
+  summon:        {queries: ["summon spell", "summoning magic", "dark portal open"], min: 0.5, max: 6, cut: 3.5}
+  armor_clank:   {queries: ["chainmail", "armor rattle", "knight armor", "metal armor movement"], min: 0.3, max: 8, cut: 2.5}
+  drink:         {queries: ["drinking gulp", "potion drink", "gulp swallow"], min: 0.3, max: 5, cut: 2.0}
+  chest_open:    {queries: ["chest open creak", "wooden chest open", "treasure chest open"], min: 0.3, max: 5, cut: 2.5}
+  lock_click:    {queries: ["lock unlock click", "lockpicking", "key turn lock"], min: 0.2, max: 4, cut: 2.0}
+  trap_click:    {queries: ["trap mechanism click", "mechanism click metal", "bear trap snap"], min: 0.1, max: 3, cut: 1.5}
+  portcullis:    {queries: ["portcullis gate", "iron gate slam", "metal gate close heavy"], min: 0.5, max: 8, cut: 3.5}
+  torch_light:   {queries: ["torch ignite", "match strike fire", "torch light whoosh"], min: 0.3, max: 5, cut: 2.5}
+  paper:         {queries: ["scroll unroll paper", "paper unfold", "book page turn"], min: 0.2, max: 4, cut: 2.0}
+  war_cry:       {queries: ["battle cry", "war cry shout", "warrior yell charge"], min: 0.5, max: 5, cut: 2.5}
+  death_cry:     {queries: ["death scream male", "man dying scream", "pain scream death"], min: 0.3, max: 4, cut: 2.0}
+  scream:        {queries: ["woman scream", "female scream fear", "horror scream"], min: 0.3, max: 4, cut: 2.5}
+  rockfall:      {queries: ["rockfall", "rocks falling collapse", "cave collapse rubble"], min: 1, max: 10, cut: 4.0}
+  chains:        {queries: ["chains rattle", "metal chains", "shackles chains"], min: 0.3, max: 6, cut: 2.5}
+  # --- ДнД: голоса персонажей ---
+  goblin_cackle:   {queries: ["goblin laugh", "goblin voice", "creature cackle small"], min: 0.3, max: 5, cut: 2.5}
+  orc_grunt:       {queries: ["orc grunt", "orc voice", "monster grunt deep"], min: 0.3, max: 5, cut: 2.5}
+  ogre_growl:      {queries: ["ogre growl", "troll growl", "giant monster growl"], min: 0.5, max: 6, cut: 3.0}
+  bones_rattle:    {queries: ["skeleton bones rattle", "bones clatter", "skeleton walk"], min: 0.3, max: 5, cut: 2.5}
+  zombie_groan:    {queries: ["zombie groan", "zombie moan", "undead growl"], min: 0.5, max: 6, cut: 3.0}
+  ghost_moan:      {queries: ["ghost moan", "ghost whisper", "spooky ghost"], min: 0.5, max: 8, cut: 3.5}
+  vampire_hiss:    {queries: ["vampire hiss", "creature hiss", "evil hiss"], min: 0.3, max: 4, cut: 2.0}
+  werewolf_growl:  {queries: ["werewolf growl", "werewolf howl", "beast snarl"], min: 0.5, max: 6, cut: 3.0}
+  spider_skitter:  {queries: ["creepy crawling", "insects crawling", "scuttling", "bug crawl"], min: 0.3, max: 8, cut: 2.5}
+  rat_squeak:      {queries: ["rat squeak", "rats squeaking", "mouse squeaks"], min: 0.3, max: 5, cut: 2.0}
+  bat_screech:     {queries: ["bat screech", "bats flying", "bat squeak"], min: 0.3, max: 6, cut: 2.5}
+  demon_growl:     {queries: ["demon growl", "demon voice", "hellish growl"], min: 0.5, max: 6, cut: 3.0}
+  elemental_rumble: {queries: ["earth rumble", "ground rumble", "earthquake rumble", "stone golem"], min: 1, max: 10, cut: 3.5}
+  slime_squelch:   {queries: ["slime squelch", "goo squish", "slimy creature"], min: 0.2, max: 4, cut: 2.0}
+  griffin_screech: {queries: ["eagle screech", "griffin screech", "hawk scream"], min: 0.3, max: 5, cut: 2.5}
+  elf_chime:       {queries: ["harp glissando", "fairy chime", "magical harp"], min: 0.5, max: 6, cut: 3.0}
+  dwarf_laugh:     {queries: ["man hearty laugh", "deep laugh man", "jolly laugh"], min: 0.5, max: 5, cut: 2.5}
+  mug_clink:       {queries: ["glasses clink cheers", "beer glass toast", "glass clink", "cups clink"], min: 0.2, max: 5, cut: 2.0}
+  lute:            {queries: ["lute", "lute music", "medieval guitar strum", "acoustic guitar strum chord"], min: 1, max: 15, cut: 4.0}
+
 ambience:
   forest:  {queries: ["forest ambience birds", "forest ambience day", "woods birdsong ambience"], min: 30, max: 600, cut: 40}
   meadow:  {queries: ["meadow ambience summer", "field ambience birds insects", "countryside ambience"], min: 30, max: 600, cut: 40}
@@ -83,3 +125,8 @@ ambience:
   wind:    {queries: ["wind ambience", "wind howling", "strong wind"], min: 30, max: 600, cut: 40}
   snow:    {queries: ["blizzard wind", "winter wind snow", "snowstorm ambience"], min: 30, max: 600, cut: 40}
   fire:    {queries: ["campfire crackling", "fireplace crackle", "fire crackling"], min: 30, max: 600, cut: 40}
+
+  # --- ДнД (задача 24) ---
+  temple:     {queries: ["cathedral ambience", "church interior ambience", "temple ambience"], min: 30, max: 600, cut: 40}
+  graveyard:  {queries: ["graveyard ambience night", "cemetery ambience", "spooky night wind crows"], min: 30, max: 600, cut: 40}
+  camp:       {queries: ["campfire night ambience", "campfire crickets", "camping fire ambience"], min: 30, max: 600, cut: 40}

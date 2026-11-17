@@ -1,4 +1,6 @@
 # Звуки, проверенные владельцем на слух в каталоге (tools/catalog.py)
+ambience/battle: true
+ambience/swamp: true
 sfx/bear_growl: true
 sfx/cat_meow: true
 sfx/child_laugh: true

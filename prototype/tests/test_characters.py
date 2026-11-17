@@ -92,15 +92,26 @@ def test_engine_plays_character_sound(actions, scene_data, characters, clock):
     assert ("sfx", "old_man_grunt") in eng.audio.log and ("sfx", "old_woman_sigh") in eng.audio.log
 
 
-def test_engine_skips_character_if_action_sounded(actions, scene_data, characters, clock):
+def test_engine_defers_character_if_action_sounded(actions, scene_data, characters, clock):
+    """Звук действия только что был — голос персонажа не сразу (каша), а когда тот отзвучит (задача 24)."""
     from storyfx.asr import TextEvent
     eng = make_engine(actions, scene_data, clock, characters=characters)
     eng._last_action_t = clock()       # как если бы только что прозвучал звук действия
     eng.on_text(TextEvent("пришёл медведь", True))
     assert ("char", "bear") not in eng.events
     clock.advance(config.CHARACTER_AFTER_ACTION_S + 0.1)
-    eng.on_text(TextEvent("пришла лиса", True))   # звук действия был давно
-    assert ("char", "fox") in eng.events
+    eng.on_text(TextEvent("пришла лиса", True))   # звук действия отзвучал: медведь — отложенный, лиса — сразу
+    assert ("char", "bear") in eng.events and ("char", "fox") in eng.events
+
+
+def test_deferred_voice_dropped_if_too_late(actions, scene_data, characters, clock):
+    from storyfx.asr import TextEvent
+    eng = make_engine(actions, scene_data, clock, characters=characters)
+    eng._last_action_t = clock()
+    eng.on_text(TextEvent("пришёл медведь", True))
+    clock.advance(config.CHARACTER_DEFER_MAX_S + 1)
+    eng.on_text(TextEvent("тишина", True))
+    assert ("char", "bear") not in eng.events
 
 
 def test_character_voiced_in_long_phrase_after_early_action(actions, scene_data, characters, clock):

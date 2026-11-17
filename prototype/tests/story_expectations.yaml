@@ -98,3 +98,19 @@ stories:
       - {words: "шелохнется", sfx: [roar]}               # медведь стоит молча
     known_failing: []
     known_failing_voice: []
+
+  dnd_crypt:                              # задача 24: приключение ДнД
+    # сжатый текст: 4 эпизода за 190 слов (лагерь — бой — склеп — таверна), смены настроения тут по делу
+    limits: {scene: 40, mood: 50}
+    expect:
+      char: [dwarf, elf, skeleton, goblin, werewolf, villain, zombie, innkeeper, bard]
+      scene: [camp, graveyard, tavern]
+      sfx: [torch_light, paper, war_cry, heavy_hit, stab, death_cry, lock_click, door_creak, chest_open, trap_click,
+            portcullis, fireball, magic_shield, summon, chains, heal, drink, rockfall]
+    forbid:
+      sfx: [gunshot, sleigh_bells, coins]
+      scene: [sea, village]
+    forbid_in:
+      - {words: "кладбищ", sfx: [rockfall]}             # «вышли к кладбищу» — не обвал
+    known_failing: []
+    known_failing_voice: []
