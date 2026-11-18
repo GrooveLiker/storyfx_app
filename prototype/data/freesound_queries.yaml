@@ -30,7 +30,7 @@ sfx:
   arrow:        {queries: ["arrow shot", "bow arrow release", "arrow whoosh impact"], min: 0.2, max: 3, cut: 1.5}
   thunder:      {queries: ["thunder clap", "thunder rumble", "thunder strike"], min: 1, max: 12, cut: 5.0}
   gunshot:      {queries: ["rifle gunshot", "shotgun shot", "gunshot single", "musket shot"], min: 0.3, max: 6, cut: 2.5}
-  sleigh_bells: {queries: ["sleigh bells", "sleigh bells jingle", "horse sleigh bells"], min: 1, max: 20, cut: 4.0}
+  sleigh_bells: {queries: ["carriage", "sleigh", "clatter of hooves"], min: 1, max: 20, cut: 4.0}
   frost_crackle: {queries: ["ice crackle", "ice cracking", "frozen lake crack", "ice creak"], min: 0.5, max: 15, cut: 3.0}
 
   # --- голоса персонажей при появлении (data/characters.yaml, docs/characters.md) ---
@@ -65,14 +65,14 @@ sfx:
   propeller:      {queries: ["small propeller", "propeller motor", "toy propeller"], min: 0.5, max: 10, cut: 2.0}
 
   # --- ДнД: действия (задача 24) ---
-  heavy_hit:     {queries: ["hammer hit metal", "mace impact", "anvil hit", "heavy metal impact"], min: 0.2, max: 4, cut: 1.5}
+  heavy_hit:     {queries: ["stone crush"], min: 0.2, max: 4, cut: 1.5}
   stab:          {queries: ["sword stab flesh", "knife stab", "dagger stab"], min: 0.1, max: 3, cut: 1.2}
   necrotic:      {queries: ["dark magic spell", "necromancy spell", "evil magic whoosh"], min: 0.5, max: 6, cut: 3.0}
   poison:        {queries: ["acid sizzle", "poison gas hiss", "acid burn spell"], min: 0.5, max: 6, cut: 3.0}
   teleport:      {queries: ["teleport spell", "magic portal whoosh", "teleport sound"], min: 0.3, max: 5, cut: 2.5}
   magic_shield:  {queries: ["magic shield spell", "force field activate", "magic barrier"], min: 0.3, max: 5, cut: 2.5}
   summon:        {queries: ["summon spell", "summoning magic", "dark portal open"], min: 0.5, max: 6, cut: 3.5}
-  armor_clank:   {queries: ["chainmail", "armor rattle", "knight armor", "metal armor movement"], min: 0.3, max: 8, cut: 2.5}
+  armor_clank:   {queries: ["metall falling", "metall crush"], min: 0.3, max: 8, cut: 2.5}
   drink:         {queries: ["drinking gulp", "potion drink", "gulp swallow"], min: 0.3, max: 5, cut: 2.0}
   chest_open:    {queries: ["chest open creak", "wooden chest open", "treasure chest open"], min: 0.3, max: 5, cut: 2.5}
   lock_click:    {queries: ["lock unlock click", "lockpicking", "key turn lock"], min: 0.2, max: 4, cut: 2.0}
@@ -127,6 +127,6 @@ ambience:
   fire:    {queries: ["campfire crackling", "fireplace crackle", "fire crackling"], min: 30, max: 600, cut: 40}
 
   # --- ДнД (задача 24) ---
-  temple:     {queries: ["cathedral ambience", "church interior ambience", "temple ambience"], min: 30, max: 600, cut: 40}
+  temple:     {queries: ["church bells"], min: 30, max: 600, cut: 40}
   graveyard:  {queries: ["graveyard ambience night", "cemetery ambience", "spooky night wind crows"], min: 30, max: 600, cut: 40}
   camp:       {queries: ["campfire night ambience", "campfire crickets", "camping fire ambience"], min: 30, max: 600, cut: 40}

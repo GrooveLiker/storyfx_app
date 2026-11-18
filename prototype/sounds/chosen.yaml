@@ -18,10 +18,10 @@ ambience/castle:
   url: https://freesound.org/people/Quistard/sounds/174279/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/cave:
-  id: 343742
-  name: cave 01
-  username: rucisko
-  url: https://freesound.org/people/rucisko/sounds/343742/
+  id: 234554
+  name: Dripping water
+  username: Electroviolence
+  url: https://freesound.org/people/Electroviolence/sounds/234554/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/city:
   id: 648483
@@ -30,22 +30,22 @@ ambience/city:
   url: https://freesound.org/people/nicoproson/sounds/648483/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/fire:
-  id: 204348
-  name: Crackling Fire
-  username: Sauron974
-  url: https://freesound.org/people/Sauron974/sounds/204348/
+  id: 729396
+  name: Campfire 02
+  username: HECKFRICKER
+  url: https://freesound.org/people/HECKFRICKER/sounds/729396/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/forest:
-  id: 456123
-  name: Birds In The Forest
-  username: BurghRecords
-  url: https://freesound.org/people/BurghRecords/sounds/456123/
+  id: 850507
+  name: Birds in the Slovenian Forest - Processed w/ Generated Noise
+  username: GammaGool
+  url: https://freesound.org/people/GammaGool/sounds/850507/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/graveyard:
-  id: 776080
-  name: AMB-Night,QuietForest,Tree,Creeks,Wind-Otepaa,Estonia-21Mar2021-2149H
-  username: soundandmelodies
-  url: https://freesound.org/people/soundandmelodies/sounds/776080/
+  id: 613167
+  name: city ​​cemetery atmosphere recording
+  username: Garuda1982
+  url: https://freesound.org/people/Garuda1982/sounds/613167/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/home:
   id: 81801
@@ -66,22 +66,23 @@ ambience/night:
   url: https://freesound.org/people/Defelozedd94/sounds/522298/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/rain:
-  id: 573335
-  name: Soft Rain Ambience edlarez vsnr.wav
-  username: visionear
-  url: https://freesound.org/people/visionear/sounds/573335/
+  id: 759562
+  name: Light Forest Rain Ambience with Village Sounds in the Background
+  username: Garuda1982
+  url: https://freesound.org/people/Garuda1982/sounds/759562/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/river:
-  id: 446019
-  name: Gentle Stream Natural Stream Sound
-  username: BurghRecords
-  url: https://freesound.org/people/BurghRecords/sounds/446019/
+  id: 433589
+  name: Stream River Water Up Close
+  username: jackthemurray
+  url: https://freesound.org/people/jackthemurray/sounds/433589/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/sea:
-  id: 368389
-  name: Waves on Brighton beach
-  username: dickiedrummer
-  url: https://freesound.org/people/dickiedrummer/sounds/368389/
+  id: 550915
+  name: BGSaSc Water Beach Ocean Waves Constant Splashing Rocks Many Small Waves Greece
+    16
+  username: Profispiesser
+  url: https://freesound.org/people/Profispiesser/sounds/550915/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/snow:
   id: 117136
@@ -90,10 +91,10 @@ ambience/snow:
   url: https://freesound.org/people/cobratronik/sounds/117136/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/storm:
-  id: 425174
-  name: Thunderstorm with heavy rain1.wav
-  username: Audeption
-  url: https://freesound.org/people/Audeption/sounds/425174/
+  id: 278865
+  name: Thunderstorm 3.WAV
+  username: Sandermotions
+  url: https://freesound.org/people/Sandermotions/sounds/278865/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/swamp:
   id: 462889
@@ -102,10 +103,10 @@ ambience/swamp:
   url: https://freesound.org/people/mycompasstv/sounds/462889/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/tavern:
-  id: 326313
-  name: Tavern_Ambience_Inside_Laughter.WAV
-  username: ivolipa
-  url: https://freesound.org/people/ivolipa/sounds/326313/
+  id: 695295
+  name: Pirate Tavern
+  username: brunoboselli
+  url: https://freesound.org/people/brunoboselli/sounds/695295/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/temple:
   id: 174279
@@ -120,16 +121,16 @@ ambience/village:
   url: https://freesound.org/people/titi2/sounds/567523/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/wind:
-  id: 423314
-  name: Wind ambience
-  username: haniebal
-  url: https://freesound.org/people/haniebal/sounds/423314/
+  id: 459981
+  name: Strong Wind
+  username: florianreichelt
+  url: https://freesound.org/people/florianreichelt/sounds/459981/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/armor_clank:
-  id: 505669
-  name: Metallic / mechanical sound (Clings and Clangs)
-  username: Breviceps
-  url: https://freesound.org/people/Breviceps/sounds/505669/
+  id: 689549
+  name: Metal falling
+  username: xkeril
+  url: https://freesound.org/people/xkeril/sounds/689549/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/arrow:
   id: 410751
@@ -156,10 +157,10 @@ sfx/bell:
   url: https://freesound.org/people/igroglaz/sounds/633208/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/bird:
-  id: 517736
-  name: 'Bird Sound #1'
-  username: danlucaz
-  url: https://freesound.org/people/danlucaz/sounds/517736/
+  id: 507264
+  name: Bird Noise - 6.wav
+  username: SpaceJoe
+  url: https://freesound.org/people/SpaceJoe/sounds/507264/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/bones_rattle:
   id: 473526
@@ -174,10 +175,10 @@ sfx/cat_meow:
   url: https://freesound.org/people/Lukey1028/sounds/732520/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/chains:
-  id: 235960
-  name: Chains Rattling.wav
-  username: mffm
-  url: https://freesound.org/people/mffm/sounds/235960/
+  id: 345070
+  name: CHAIN & LOCK ON FENCE SOUND.wav
+  username: metrostock99
+  url: https://freesound.org/people/metrostock99/sounds/345070/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/chest_open:
   id: 422975
@@ -192,10 +193,10 @@ sfx/child_laugh:
   url: https://freesound.org/people/medyk3D/sounds/616088/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/coins:
-  id: 211447
-  name: Drop Coins 1
-  username: FlatHill
-  url: https://freesound.org/people/FlatHill/sounds/211447/
+  id: 162195
+  name: Coin Drop.wav
+  username: Rickmk2
+  url: https://freesound.org/people/Rickmk2/sounds/162195/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/cow_moo:
   id: 59245
@@ -216,10 +217,10 @@ sfx/death_cry:
   url: https://freesound.org/people/scorpion67890/sounds/396798/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/demon_growl:
-  id: 362672
-  name: Demon_Ghost Growling 1.wav
-  username: Osiruswaltz
-  url: https://freesound.org/people/Osiruswaltz/sounds/362672/
+  id: 222523
+  name: Deep Monster Growl
+  username: uagadugu
+  url: https://freesound.org/people/uagadugu/sounds/222523/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/dog_bark:
   id: 625496
@@ -228,22 +229,22 @@ sfx/dog_bark:
   url: https://freesound.org/people/abhisheky948/sounds/625496/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/donkey_bray:
-  id: 787564
-  name: Donkeys - Donkey Bray, Close Perspective
-  username: TheKingOfGeeks360
-  url: https://freesound.org/people/TheKingOfGeeks360/sounds/787564/
+  id: 392029
+  name: Jumento.wav
+  username: rafaelpicoli
+  url: https://freesound.org/people/rafaelpicoli/sounds/392029/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/door_creak:
-  id: 125957
-  name: Opening a creaking door
-  username: Ryding
-  url: https://freesound.org/people/Ryding/sounds/125957/
+  id: 455324
+  name: Heavy Door Creaking_05.wav
+  username: rambler52
+  url: https://freesound.org/people/rambler52/sounds/455324/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/door_knock:
-  id: 193827
-  name: Door Knock - 11.wav
-  username: Ligidium
-  url: https://freesound.org/people/Ligidium/sounds/193827/
+  id: 865362
+  name: 26.07.26- Knocking on Wooden Door 4
+  username: Valerie-Vivegnis
+  url: https://freesound.org/people/Valerie-Vivegnis/sounds/865362/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/drink:
   id: 320139
@@ -264,10 +265,10 @@ sfx/dwarf_laugh:
   url: https://freesound.org/people/NinjaSharkStudios/sounds/649082/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/elemental_rumble:
-  id: 17451
-  name: earth_combined.mp3
-  username: lostchocolatelab
-  url: https://freesound.org/people/lostchocolatelab/sounds/17451/
+  id: 82722
+  name: Digging.wav
+  username: prozaciswack
+  url: https://freesound.org/people/prozaciswack/sounds/82722/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/elephant:
   id: 527845
@@ -288,10 +289,10 @@ sfx/evil_laugh:
   url: https://freesound.org/people/NinjaSharkStudios/sounds/646307/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/explosion:
-  id: 482992
-  name: large explosion 2
-  username: V-ktor
-  url: https://freesound.org/people/V-ktor/sounds/482992/
+  id: 264031
+  name: low mid afar explosion 1.wav
+  username: Logicogonist
+  url: https://freesound.org/people/Logicogonist/sounds/264031/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/fall:
   id: 504626
@@ -306,16 +307,16 @@ sfx/fanfare:
   url: https://freesound.org/people/plasterbrain/sounds/397355/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/fireball:
-  id: 867421
-  name: Fireball
-  username: Aldurim
-  url: https://freesound.org/people/Aldurim/sounds/867421/
+  id: 171255
+  name: Sliding Trailer Woosh
+  username: qubodup
+  url: https://freesound.org/people/qubodup/sounds/171255/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/footsteps:
-  id: 521590
-  name: Hiking Boot Footsteps on Stone
-  username: Fission9
-  url: https://freesound.org/people/Fission9/sounds/521590/
+  id: 816019
+  name: FPS Footsteps Loop
+  username: qubodup
+  url: https://freesound.org/people/qubodup/sounds/816019/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/fox_yelp:
   id: 173208
@@ -354,10 +355,10 @@ sfx/goat_bleat:
   url: https://freesound.org/people/Kinoton/sounds/581240/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/goblin_cackle:
-  id: 202096
-  name: Goblin Cackle.wav
-  username: spookymodem
-  url: https://freesound.org/people/spookymodem/sounds/202096/
+  id: 857062
+  name: Crazy Goblin Laugh Low Quality
+  username: qubodup
+  url: https://freesound.org/people/qubodup/sounds/857062/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/goose_honk:
   id: 510945
@@ -372,10 +373,10 @@ sfx/griffin_screech:
   url: https://freesound.org/people/GrayEpic/sounds/697363/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/gunshot:
-  id: 563015
-  name: a loud gunshot in the woods
-  username: florianreichelt
-  url: https://freesound.org/people/florianreichelt/sounds/563015/
+  id: 370304
+  name: Single Gunshot 2.wav
+  username: morganpurkis
+  url: https://freesound.org/people/morganpurkis/sounds/370304/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/hare_hop:
   id: 364712
@@ -384,16 +385,16 @@ sfx/hare_hop:
   url: https://freesound.org/people/alegemaate/sounds/364712/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/heal:
-  id: 876169
-  name: Healing Spell Chime (Fantasy RPG)
-  username: Assetsmith
-  url: https://freesound.org/people/Assetsmith/sounds/876169/
+  id: 530488
+  name: Heal Up
+  username: Rickplayer
+  url: https://freesound.org/people/Rickplayer/sounds/530488/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/heavy_hit:
-  id: 337837
-  name: med-metal-hit-03.wav
-  username: newagesoup
-  url: https://freesound.org/people/newagesoup/sounds/337837/
+  id: 711657
+  name: Stone crash
+  username: discofield
+  url: https://freesound.org/people/discofield/sounds/711657/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/hedgehog_snuffle:
   id: 570301
@@ -408,10 +409,10 @@ sfx/hen_cluck:
   url: https://freesound.org/people/RG2Cents/sounds/536501/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/horse_gallop:
-  id: 175356
-  name: Horse Galloping.wav
-  username: Max_Headroom
-  url: https://freesound.org/people/Max_Headroom/sounds/175356/
+  id: 564628
+  name: Single Horse Galopp
+  username: D4XX
+  url: https://freesound.org/people/D4XX/sounds/564628/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/horse_snort:
   id: 475483
@@ -420,10 +421,10 @@ sfx/horse_snort:
   url: https://freesound.org/people/o_ciz/sounds/475483/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/ice:
-  id: 160420
-  name: iceSpell.wav
-  username: Relenzo2
-  url: https://freesound.org/people/Relenzo2/sounds/160420/
+  id: 709888
+  name: Ice Magic Arrow_type 01
+  username: lotteria001
+  url: https://freesound.org/people/lotteria001/sounds/709888/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/insect_buzz:
   id: 328398
@@ -444,16 +445,16 @@ sfx/lock_click:
   url: https://freesound.org/people/IPaddeh/sounds/422852/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/lute:
-  id: 506266
-  name: Medieval Lute Chords
-  username: f-r-a-g-i-l-e
-  url: https://freesound.org/people/f-r-a-g-i-l-e/sounds/506266/
+  id: 234738
+  name: guitar strum.wav
+  username: FenrirFangs
+  url: https://freesound.org/people/FenrirFangs/sounds/234738/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/magic:
-  id: 521873
-  name: Glimmer.wav
-  username: opticaillusions
-  url: https://freesound.org/people/opticaillusions/sounds/521873/
+  id: 562292
+  name: Heal - Rpg
+  username: colorsCrimsonTears
+  url: https://freesound.org/people/colorsCrimsonTears/sounds/562292/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/magic_shield:
   id: 249818
@@ -480,10 +481,10 @@ sfx/mug_clink:
   url: https://freesound.org/people/Dentrabert/sounds/673315/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/necrotic:
-  id: 688048
-  name: Ululu - dark mage casting a spell
-  username: faragilus
-  url: https://freesound.org/people/faragilus/sounds/688048/
+  id: 740776
+  name: Necromancy Summoning Magic Spell
+  username: qubodup
+  url: https://freesound.org/people/qubodup/sounds/740776/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/ogre_growl:
   id: 607201
@@ -540,22 +541,22 @@ sfx/propeller:
   url: https://freesound.org/people/Mish7913/sounds/741362/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/punch:
-  id: 209765
-  name: Punch 1
-  username: peridactyloptrix
-  url: https://freesound.org/people/peridactyloptrix/sounds/209765/
+  id: 348242
+  name: PUNCH-BOXING-03.wav
+  username: newagesoup
+  url: https://freesound.org/people/newagesoup/sounds/348242/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/rat_squeak:
-  id: 288941
-  name: rat-squeak.wav
-  username: toefur
-  url: https://freesound.org/people/toefur/sounds/288941/
+  id: 536753
+  name: Rat.ogg
+  username: egomassive
+  url: https://freesound.org/people/egomassive/sounds/536753/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/roar:
-  id: 320345
-  name: Dino Hiss Dragon Roar
-  username: '999999990'
-  url: https://freesound.org/people/999999990/sounds/320345/
+  id: 476083
+  name: cloverfield roar.wav
+  username: icyjim
+  url: https://freesound.org/people/icyjim/sounds/476083/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/rockfall:
   id: 567249
@@ -570,16 +571,16 @@ sfx/rooster:
   url: https://freesound.org/people/BenjaminNelan/sounds/435506/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/scream:
-  id: 261419
-  name: WomanScream.wav
-  username: Archeos
-  url: https://freesound.org/people/Archeos/sounds/261419/
+  id: 400183
+  name: Girl Screaming_01.wav
+  username: tomattka
+  url: https://freesound.org/people/tomattka/sounds/400183/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/sleigh_bells:
-  id: 235465
-  name: Sleigh_Bells_fast.wav
-  username: jcdecha
-  url: https://freesound.org/people/jcdecha/sounds/235465/
+  id: 388391
+  name: Horse and Carriage.mp3
+  username: maadmacs
+  url: https://freesound.org/people/maadmacs/sounds/388391/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/slime_squelch:
   id: 433812
@@ -588,28 +589,28 @@ sfx/slime_squelch:
   url: https://freesound.org/people/Archos/sounds/433812/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/snake_hiss:
-  id: 553374
-  name: Snake Hiss
-  username: xoiziox
-  url: https://freesound.org/people/xoiziox/sounds/553374/
+  id: 447636
+  name: HIS_hissing_cat_snake.wav
+  username: CrownieYT
+  url: https://freesound.org/people/CrownieYT/sounds/447636/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/spider_skitter:
-  id: 175226
-  name: creatures-scuttle-fast-01.wav
-  username: MinigunFiend
-  url: https://freesound.org/people/MinigunFiend/sounds/175226/
+  id: 684865
+  name: Creature noise crawly.mp3
+  username: FairCashew
+  url: https://freesound.org/people/FairCashew/sounds/684865/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/splash:
-  id: 212143
-  name: SPLASH (by blaukreuz)
-  username: qubodup
-  url: https://freesound.org/people/qubodup/sounds/212143/
+  id: 743910
+  name: Jump on water
+  username: Alex_eapo
+  url: https://freesound.org/people/Alex_eapo/sounds/743910/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/stab:
-  id: 395373
-  name: Sword stab 2
-  username: ihitokage
-  url: https://freesound.org/people/ihitokage/sounds/395373/
+  id: 179222
+  name: Knife Stab.wav
+  username: Mixedupmoviestuff
+  url: https://freesound.org/people/Mixedupmoviestuff/sounds/179222/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/summon:
   id: 740776
@@ -624,10 +625,10 @@ sfx/sword_clash:
   url: https://freesound.org/people/JohnBuhr/sounds/326867/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/sword_swing:
-  id: 367182
-  name: swing.mp3
-  username: GaussTheWizard
-  url: https://freesound.org/people/GaussTheWizard/sounds/367182/
+  id: 507466
+  name: Clean fast Swoosh.aiff
+  username: Danjocross
+  url: https://freesound.org/people/Danjocross/sounds/507466/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/teleport:
   id: 441225
@@ -642,28 +643,28 @@ sfx/thunder:
   url: https://freesound.org/people/seth-m/sounds/458015/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/torch_light:
-  id: 386385
-  name: Torch - Ignite flame on soft
-  username: ldezem
-  url: https://freesound.org/people/ldezem/sounds/386385/
+  id: 668375
+  name: Blow Torch
+  username: adh.dreaming
+  url: https://freesound.org/people/adh.dreaming/sounds/668375/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/trap_click:
-  id: 752067
-  name: Mechanism Activation Sequence
-  username: qubodup
-  url: https://freesound.org/people/qubodup/sounds/752067/
+  id: 693587
+  name: metal-mechanism-click.mp3
+  username: rottako
+  url: https://freesound.org/people/rottako/sounds/693587/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/vampire_hiss:
-  id: 760827
-  name: 'Universal Studios Monster Sound #6 Hiss'
-  username: Mastersoundboy2005
-  url: https://freesound.org/people/Mastersoundboy2005/sounds/760827/
+  id: 269111
+  name: Hissing
+  username: VisualPony
+  url: https://freesound.org/people/VisualPony/sounds/269111/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/war_cry:
-  id: 521830
-  name: Middle Ages War Cry.wav
+  id: 521831
+  name: Middle Ages War Cry 3.wav
   username: joelcarrsound
-  url: https://freesound.org/people/joelcarrsound/sounds/521830/
+  url: https://freesound.org/people/joelcarrsound/sounds/521831/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/werewolf_growl:
   id: 257631
@@ -672,10 +673,10 @@ sfx/werewolf_growl:
   url: https://freesound.org/people/Bananaboatman33/sounds/257631/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/whistle:
-  id: 534607
-  name: stock-whistle-00.flac
-  username: pbimal
-  url: https://freesound.org/people/pbimal/sounds/534607/
+  id: 42197
+  name: wolf_whistle.wav
+  username: fauxpress
+  url: https://freesound.org/people/fauxpress/sounds/42197/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/witch_cackle:
   id: 348142
@@ -690,8 +691,8 @@ sfx/wolf_howl:
   url: https://freesound.org/people/NaturesTemper/sounds/398430/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/zombie_groan:
-  id: 196722
-  name: SZ_Zombies_06.wav
+  id: 196720
+  name: SZ_Zombies_02.wav
   username: PaulMorek
-  url: https://freesound.org/people/PaulMorek/sounds/196722/
+  url: https://freesound.org/people/PaulMorek/sounds/196720/
   license: http://creativecommons.org/publicdomain/zero/1.0/
