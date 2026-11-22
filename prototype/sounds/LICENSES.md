@@ -62,7 +62,7 @@
 | sfx/footsteps.wav | https://freesound.org/people/qubodup/sounds/816019/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/fox_yelp.wav | https://freesound.org/people/Setzilla/sounds/173208/ | Setzilla | CC0 1.0 | обрезка, громкость |
 | sfx/frog_croak.wav | https://freesound.org/people/katzlbt/sounds/361117/ | katzlbt | CC0 1.0 | обрезка, громкость |
-| sfx/frost_crackle.wav | https://freesound.org/people/kyles/sounds/452645/ | kyles | CC0 1.0 | обрезка, громкость |
+| sfx/frost_crackle.wav | https://freesound.org/people/humanoide9000/sounds/329744/ | humanoide9000 | CC0 1.0 | обрезка, громкость |
 | sfx/ghost_moan.wav | https://freesound.org/people/SnowFightStudios/sounds/643741/ | SnowFightStudios | CC0 1.0 | обрезка, громкость |
 | sfx/giant_steps.wav | https://freesound.org/people/Beefmaster69/sounds/531725/ | Beefmaster69 | CC0 1.0 | обрезка, громкость |
 | sfx/goat_bleat.wav | https://freesound.org/people/Kinoton/sounds/581240/ | Kinoton | CC0 1.0 | обрезка, громкость |

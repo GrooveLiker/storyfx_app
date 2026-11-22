@@ -1,5 +1,6 @@
 # Звуки, проверенные владельцем на слух в каталоге (tools/catalog.py)
 ambience/battle: true
+ambience/camp: true
 ambience/castle: true
 ambience/cave: true
 ambience/city: true
@@ -47,10 +48,12 @@ sfx/evil_laugh: true
 sfx/explosion: true
 sfx/fall: true
 sfx/fanfare: true
+sfx/fiddle: true
 sfx/fireball: true
 sfx/footsteps: true
 sfx/fox_yelp: true
 sfx/frog_croak: true
+sfx/frost_crackle: true
 sfx/ghost_moan: true
 sfx/giant_steps: true
 sfx/goat_bleat: true
