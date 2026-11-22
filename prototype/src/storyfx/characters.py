@@ -138,6 +138,8 @@ class CharacterTracker:
                 # «заяц испугался и убежал» — подлежащее не повторили: уходит последний названный до этой части.
                 # Но «я от волка ушёл» — уходит говорящий, волк остаётся.
                 leaving = [m for m in mentions if m.position < s and not m.obj and not m.address][-1:]
+                for m in leaving:
+                    m.came_first = True
             for m in leaving:
                 if not self._is_witness(tokens, m.position):
                     m.leaving = True

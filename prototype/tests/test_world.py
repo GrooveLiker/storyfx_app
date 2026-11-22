@@ -33,6 +33,13 @@ def test_leaving_unknown_character_is_silent(characters, clock):
     assert observe(t, w, "где-то далеко волк убежал") == []           # не был на сцене — ни входа, ни ухода
 
 
+def test_came_and_left_in_one_phrase(characters, clock):
+    """«Выскочил заяц и тут же убежал» — не был на сцене: появился (голос) и ушёл (живой прогон 2026-11-22)."""
+    w = WorldState(clock=clock)
+    t = CharacterTracker(list(characters), clock=clock)
+    assert observe(t, w, "из-за куста выскочил заяц и тут же убежал") == [("enter", "hare"), ("leave", "hare")]
+
+
 def test_leave_only_in_its_clause(characters, clock):
     w = WorldState(clock=clock)
     t = CharacterTracker(list(characters), clock=clock)

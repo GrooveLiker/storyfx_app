@@ -160,3 +160,28 @@ def test_far_place_does_not_switch(scene_data):
     t = tracker(scene_data)
     t.add_utterance("выбежала в чистое поле метнулись вдалеке гуси лебеди и пропали за тёмным лесом")
     assert t.current == "meadow"
+
+
+def test_via_place_wins_over_destination(scene_data):
+    """«Отправился домой через тёмный лес» — сейчас лес, дом — цель пути (прогон 2026-11-22)."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("мельник отправился домой через тёмный лес")
+    assert t.current == "forest"
+
+
+def test_wander_is_not_ford(scene_data):
+    """«Мертвецы бродят» — не брод через реку."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("по кладбищу бродят мертвецы")
+    assert t.current == "graveyard"
+
+
+def test_reported_place_does_not_switch(scene_data):
+    """«Стражник рассказал, что на кладбище бродят мертвецы» — пересказ, герой не там."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("мы сидели в таверне")
+    t.add_utterance("стражник рассказал что за рекой на кладбище бродят мертвецы")
+    assert t.current == "tavern"

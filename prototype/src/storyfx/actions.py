@@ -22,7 +22,7 @@ import numpy as np
 import yaml
 
 from . import config
-from .textnorm import Pattern, Token, find_matches, is_negated, parse_pattern, tokenize
+from .textnorm import Pattern, Token, find_matches, is_comparison, is_negated, parse_pattern, tokenize
 
 NONE = "_none"
 
@@ -135,10 +135,10 @@ class ActionMatcher:
     embedder: object | None = None
     clock: Callable[[], float] = time.monotonic
     use_deadlines: bool = True          # речь: решать не позже ~1 с (D-011). Набор текста: False — по смыслу, не по секундомеру
-    _seen: set[tuple[int, int, str]] = field(default_factory=set)    # (фраза, начало части, тема)
+    _seen: set[tuple] = field(default_factory=set)    # (фраза, тема, слово-якорь, его номер в фразе)
     _last_fired: dict[str, float] = field(default_factory=dict)
     _clf: dict[str, object] = field(default_factory=dict)
-    _first_seen: dict[tuple, float] = field(default_factory=dict)   # (фраза, часть, тема, якорь) → когда услышали
+    _first_seen: dict[tuple, float] = field(default_factory=dict)   # (ключ части, последний якорь) → когда услышали
 
     def __post_init__(self):
         if self.embedder is not None:
@@ -181,7 +181,10 @@ class ActionMatcher:
                 if anchors:
                     anchored.append((start, end, anchors))
             for k, (start, end, anchors) in enumerate(anchored):
-                key = (utterance_id, start, g.id)
+                # Ключ — слово-якорь и его номер среди одинаковых слов фразы, а не позиция: Vosk переписывает
+                # начало длинной фразы, позиции сдвигаются — и та же часть решалась заново (решётка ×3, 2026-11-22).
+                aw = tokens[anchors[0]].word
+                key = (utterance_id, g.id, aw, sum(1 for t in tokens[:anchors[0]] if t.word == aw))
                 if key in self._seen:
                     continue
                 # Контекст после якоря может перейти через союз («подошла к лошадке и погладила её»),
@@ -201,10 +204,12 @@ class ActionMatcher:
                 ctx_tokens = tokens[lo: hi + 1]
                 ctx = " ".join(t.word for t in ctx_tokens)
                 negated = any(is_negated(tokens, a) for a in anchors)
+                # «голос громкий, как гром» — сравнение: грома нет (как у персонажей и мест)
+                simile = all(is_comparison(tokens, a) for a in anchors)
                 label = conf = None
                 if not ready:
                     bare = len(tokens) - 1 <= anchors[-1]          # после якоря ещё ни слова
-                    if negated or tokens[-1].word in config.PENDING_WORDS:
+                    if negated or simile or tokens[-1].word in config.PENDING_WORDS:
                         continue        # «дракон так и …» — дальше может быть «не зарычал»
                     if not self.use_deadlines:
                         # набор текста: слова приходят медленно, секундомер врёт — только ранний выстрел,
@@ -218,7 +223,7 @@ class ActionMatcher:
                         # D-011: звук ≤ 1 с. Чем дольше ждём, тем меньше уверенности нужно:
                         # до SOFT — только ясный смысл (ранний выстрел), потом SOFT_CONF, после HARD — обычный минимум.
                         # Отсчёт — от последнего якоря: «ударил … мечом» — новое слово темы, новая информация.
-                        waited = now - self._first_seen.setdefault((*key, anchors[-1]), now)
+                        waited = now - self._first_seen.setdefault((*key, tokens[anchors[-1]].word), now)
                         if waited < config.ACTION_SOFT_DEADLINE_S and bare:
                             continue        # рано, и после якоря ещё ни слова
                         label, conf = self.classify(g, ctx)
@@ -236,6 +241,9 @@ class ActionMatcher:
                 # отрицание относится к якорю: «не зарычал», «дождя нет»; «орк упал и не встал» — звук нужен
                 if negated:
                     decisions.append(Decision(g.id, None, 1.0, ctx, "отрицание"))
+                    continue
+                if simile:
+                    decisions.append(Decision(g.id, None, 1.0, ctx, "сравнение"))
                     continue
                 if label is None:
                     label, conf = self.classify(g, ctx)

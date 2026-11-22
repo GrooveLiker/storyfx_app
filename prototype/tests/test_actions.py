@@ -97,6 +97,29 @@ def test_live_log_anchors(actions, clock):
     assert "water" in groups("бросился в реку", 4)
 
 
+def test_simile_is_not_action(actions, clock):
+    """«Голос громкий, как гром» — сравнение, грома нет; «загремел гром» — гром."""
+    m = matcher(actions, clock)
+    assert not [d for d in m.process("голос у трактирщика был громкий как гром", 0, final=True) if d.sfx]
+    clock.advance(10)
+    assert "thunder" in [d.sfx for d in m.process("вдруг загремел гром", 1, final=True)]
+
+
+def test_same_anchor_once_when_asr_rewrites_start(actions, clock):
+    """Vosk переписал начало длинной фразы — позиции сдвинулись, но решётка звучит один раз (прогон 2026-11-22)."""
+    m = matcher(actions, clock)
+    fired = []
+    for text in ["опустилась железная решётка и он",
+                 "вдруг опустилась железная решётка и он",
+                 "вдруг сверху опустилась железная решётка и он отпер"]:
+        clock.advance(3)
+        fired += [d.sfx for d in m.process(text, 0, final=False) if d.group == "trap" and d.sfx]
+    clock.advance(3)
+    fired += [d.sfx for d in m.process("вдруг сверху опустилась железная решётка и он отпер", 0, final=True)
+              if d.group == "trap" and d.sfx]
+    assert len(fired) <= 1, fired
+
+
 # ---------- голое слово-якорь и набор текста (задача 23, шаг 3) ----------
 def fixed_answer(m, label, conf):
     """Подменить классификатор: проверяем правила решения, а не качество модели."""

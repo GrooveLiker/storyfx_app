@@ -27,6 +27,7 @@ class Mention:
     word: str
     position: int
     leaving: bool = False
+    came_first: bool = False  # назван в части фразы ДО ухода («выскочил заяц | и убежал») — сначала появился
     obj: bool = False       # после предлога: «я у дедушки ушёл» — дедушка не уходит
     address: bool = False   # обращение: «что ты наделал, старый пёс» — не появление собаки
 
@@ -75,13 +76,19 @@ class WorldState:
 
     def observe_characters(self, mentions: list[Mention]) -> list[WorldChange]:
         """Упоминания одной фразы → вошёл / ушёл. Вошёл — если его не было на сцене (никогда, ушёл или
-        давно молчали). Упоминание в уходе («заяц убежал») — ушёл, без звука появления.
+        давно молчали). Упоминание в уходе («заяц убежал») — ушёл, без звука появления; но «выскочил заяц | и тут же убежал»
+        (назван до части с уходом, а на сцене не был) — сначала появился (голос), потом ушёл.
         Обращение («ты, старый пёс») появлением не считается, но присутствие продлевает."""
         self.phrase += 1
         out, entered = [], 0
         for m in sorted(mentions, key=lambda m: m.position):
             cid = m.character.id
             if m.leaving:
+                if m.came_first and not self.is_present(cid) and entered < config.MAX_CHARACTERS_PER_PHRASE:
+                    # «выскочил заяц и тут же убежал» — впервые назван сразу в уходе: появился (голос) и ушёл
+                    out.append(self._record(WorldChange("enter", cid, "появился", m.word)))
+                    entered += 1
+                    self.present[cid] = self.phrase
                 if self.present.pop(cid, None) is not None:
                     out.append(self._record(WorldChange("leave", cid, "ушёл", m.word)))
                 continue

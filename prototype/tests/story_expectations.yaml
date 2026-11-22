@@ -114,3 +114,36 @@ stories:
       - {words: "кладбищ", sfx: [rockfall]}             # «вышли к кладбищу» — не обвал
     known_failing: []
     known_failing_voice: []
+
+  mix_journey:                            # 2026-11-22: смесь всего — много персонажей, действий, мест + ловушки
+    # 46 фраз, ≈ 420 слов, 12 мест: смены сцены здесь по делу, чаще обычного
+    limits: {scene: 25, mood: 40}
+    expect:
+      char: [dog, merchant, bard, wolf, owl, hare, dragon, innkeeper, guard, skeleton, ghost, pike, king, villain, frog]
+      leave: [hare]                       # «выскочил заяц и тут же убежал»
+      scene: [village, city, forest, cave, tavern, graveyard, sea, castle, home]
+      overlay_on: [rain, night, storm]
+      mood: [tense, cheerful, action]
+      sfx: [horse_snort, coins, lute, bell, wolf_howl, owl, thunder, roar, fall, arrow, fireball, heal, rockfall,
+            drink, fiddle, door_knock, door_creak, torch_light, sword_clash, chest_open, paper, lock_click,
+            splash, horse_gallop, magic, heavy_hit]
+    forbid:
+      sfx: [gunshot, sleigh_bells, chains]
+      scene: [swamp, temple]
+    forbid_in:
+      - {words: "как гром", sfx: [thunder]}               # сравнение
+      - {words: "не испугался", sfx: [scream]}            # отрицание
+      - {words: "за рекой на кладбище", scene: [graveyard]}   # место вдали — ещё не там
+      - {words: "бросились в атаку", sfx: [splash]}       # «бросил* в» — якорь воды, но тут атака
+      - {words: "отпер замок", scene: [castle]}           # замок — запор, не крепость
+    known_failing:
+      - expect:sfx:paper        # «в сундуке лежал свиток, и эльф развернул его» — свиток назван местоимением, якоря нет
+    known_failing_voice:
+      - expect:sfx:paper
+      # Vosk склеивает 3–4 предложения в одну фразу:
+      - expect:char:merchant    # в первой фразе уже собака и лошадь — больше двух персонажей на фразу не озвучиваем
+      - expect:char:hare        # то же: волки, сова, заяц в одной фразе
+      - expect:leave:hare
+      - expect:scene:village    # «в деревне … поехал в город» в одной фразе — побеждает город
+      - expect:sfx:horse_snort  # «запряг лошадь и поехал в город» — контекст ушёл в езду → галоп
+      - expect:sfx:roar         # «громко зарычал мельник испугался…» — контекст захватил следующее предложение
