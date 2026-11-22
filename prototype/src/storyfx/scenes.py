@@ -65,6 +65,19 @@ def load_scenes(path: Path = config.DATA_DIR / "scenes.yaml") -> tuple[list[Scen
     return scenes, overlays
 
 
+NONE = "_none"
+
+
+def load_scene_examples(path: Path = config.DATA_DIR / "scene_examples.yaml") -> dict[str, list[str]]:
+    """Примеры «где герой сейчас» для классификатора сцены по фразе (задача 25): {сцена: [...], "_none": [...]}."""
+    if not path.exists():
+        return {}
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    out = {sid: list(ex) for sid, ex in (raw.get("scenes") or {}).items()}
+    out[NONE] = list(raw.get("none") or [])
+    return out
+
+
 def _real(tokens, m) -> bool:
     """Совпадение — по-настоящему: не «дождя не было» и не «как гроза разразилась»."""
     return not is_negated(tokens, m.start, end=m.end) and not is_comparison(tokens, m.start)
@@ -153,11 +166,15 @@ class SceneTracker:
     # Только для настроения: напряжённость. Переход к более напряжённому — без выдержки min_dwell
     # (живой тест 2026-11-17: после «пустился в пляс» ворвался разбойник, а музыка ещё 90 с была весёлой).
     intensity: dict[str, float] | None = None
+    # Классификатор по последней фразе (задача 25): «воротился старик ко старухе» — дом без ключевого слова.
+    examples: dict[str, list[str]] | None = None
+    _clf: object | None = None
     _words: list[str] = field(default_factory=list)
     _candidate: str | None = None
     _candidate_hits: int = 0
     _since_switch: int = 10**6                   # фраз с последней смены
     last_scores: dict[str, float] = field(default_factory=dict)
+    last_phrase: tuple[str, float] | None = None
 
     def __post_init__(self):
         if self.embedder is not None:
@@ -165,6 +182,12 @@ class SceneTracker:
                 if s.descriptions:
                     v = self.embedder.encode(s.descriptions).mean(axis=0)
                     s.centroid = v / (np.linalg.norm(v) + 1e-9)
+            if self.examples:
+                from .actions import SoftmaxClassifier
+                known = {s.id for s in self.scenes} | {NONE}
+                pairs = [(sid, e) for sid, ex in self.examples.items() if sid in known for e in ex]
+                X = self.embedder.encode([e for _, e in pairs])
+                self._clf = SoftmaxClassifier(X, [sid for sid, _ in pairs])
 
     # ---------- входы ----------
     def add_utterance(self, text: str, speech: tuple[bool, ...] | None = None) -> list[Change]:
@@ -189,10 +212,32 @@ class SceneTracker:
                 self._set(best.id, keep=len(narration))  # новое место названо в этой фразе — помним только её
                 changes.append(Change("scene", best.id, "ключевое слово"))
                 return changes
+        # место названо, но правила решили «не здесь» («пропали за тёмным лесом», «рассказал, что на кладбище…») —
+        # классификатор их не переспорит
+        named = any(_has_match(s.keywords, tokens, spoken) for s in self.scenes)
+        if not explicit and not named:
+            c = self._by_phrase(narration)
+            if c:
+                changes.append(c)
+                return changes
         c = self.evaluate()
         if c:
             changes.append(c)
         return changes
+
+    def _by_phrase(self, narration: list[str]) -> Change | None:
+        """Сцена по смыслу одной фразы, если классификатор уверен: «вернулся к старухе» → дом."""
+        if self._clf is None or len(narration) < config.SCENE_CLF_MIN_WORDS:
+            return None
+        p = self._clf.probs(self._embed(" ".join(narration)))
+        order = np.argsort(p)[::-1]
+        label, conf, second = self._clf.classes[order[0]], float(p[order[0]]), float(p[order[1]])
+        self.last_phrase = (label, conf)
+        if (label == NONE or label == self.current or conf < config.SCENE_CLF_CONF
+                or conf - second < config.SCENE_CLF_MARGIN):
+            return None
+        self._set(label, keep=len(narration))
+        return Change("scene", label, f"по фразе ({conf:.2f})")
 
     def evaluate(self, extra_text: str = "") -> Change | None:
         """Оценка по смыслу всего окна (с гистерезисом). Можно вызывать с текущим частичным текстом."""

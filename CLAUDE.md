@@ -37,10 +37,10 @@ prototype/
   verify.ps1       — полная проверка (3 уровня)
   requirements.txt — зависимости с версиями
   src/storyfx/     — код: три звена (D-011) — asr (слух) → наблюдатели actions/scenes/characters/mood → world (модель мира) → engine+mixer+audio (звукорежиссёр)
-  data/            — actions.yaml (действия по смыслу), scenes.yaml, characters.yaml (персонажи → голос), moods.yaml (настроение → музыка), muted.yaml (выключенные звуки), speech.yaml (признаки реплики героя в голосе)
+  data/            — actions.yaml (действия по смыслу), scenes.yaml (+ scene_examples.yaml — «где герой» по фразе), characters.yaml (персонажи → голос), moods.yaml (настроение → музыка), muted.yaml (выключенные звуки), speech.yaml (признаки реплики героя в голосе)
   sounds/          — ambience/*.wav, sfx/*.wav (не в git), chosen.yaml (выбор), LICENSES.md, own/ (свои записи, в git)
   models/          — модель Vosk (скачивается init.ps1, не в git)
-  tools/           — story_run.py (прогон сказки через движок → отчёт; --voice — голосом), compare_asr.py (сравнение моделей Vosk), catalog.py + live_session.py (каталог звуков и тест озвучки в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
+  tools/           — story_run.py (прогон сказки через движок → отчёт; --voice — голосом), compare_asr.py (сравнение моделей Vosk), scene_eval.py (точность сцен по разметке), catalog.py + live_session.py (каталог звуков и тест озвучки в браузере), gen_sounds.py (заглушки), gen_music.py (музыка), fetch_freesound.py + pick_sounds.py (настоящие звуки), make_test_wavs.py (TTS)
   tests/           — pytest
 ```
 

@@ -65,14 +65,14 @@ def build(clock: Clock, log, embedder=None):
     from storyfx.engine import StoryEngine
     from storyfx.mixer import SoundMixer
     from storyfx.mood import load_moods, make_mood_tracker
-    from storyfx.scenes import RuBertEmbedder, SceneTracker, load_scenes
+    from storyfx.scenes import RuBertEmbedder, SceneTracker, load_scene_examples, load_scenes
     from storyfx.speech import load_speech_cues
     emb = embedder or RuBertEmbedder()
     scenes, overlays = load_scenes()
     moods, default = load_moods()
     return StoryEngine(
         actions=ActionMatcher(load_actions(), embedder=emb, clock=clock),
-        scenes=SceneTracker(scenes, overlays, embedder=emb),
+        scenes=SceneTracker(scenes, overlays, embedder=emb, examples=load_scene_examples()),
         audio=NullAudio(), log=log, clock=clock,
         moods=make_mood_tracker(moods, default, embedder=emb), music_on=True,
         characters=CharacterTracker(load_characters(), clock=clock),

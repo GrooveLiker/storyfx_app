@@ -69,7 +69,7 @@
 | sfx/goblin_cackle.wav | https://freesound.org/people/qubodup/sounds/857062/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/goose_honk.wav | https://freesound.org/people/SpaceJoe/sounds/510945/ | SpaceJoe | CC0 1.0 | обрезка, громкость |
 | sfx/griffin_screech.wav | https://freesound.org/people/GrayEpic/sounds/697363/ | GrayEpic | CC0 1.0 | обрезка, громкость |
-| sfx/gull.wav | https://freesound.org/people/Snapper4298/sounds/166703/ | Snapper4298 | CC0 1.0 | обрезка, громкость |
+| sfx/gull.wav | https://freesound.org/people/henner1964/sounds/699979/ | henner1964 | CC0 1.0 | обрезка, громкость |
 | sfx/gunshot.wav | https://freesound.org/people/morganpurkis/sounds/370304/ | morganpurkis | CC0 1.0 | обрезка, громкость |
 | sfx/hare_hop.wav | https://freesound.org/people/alegemaate/sounds/364712/ | alegemaate | CC0 1.0 | обрезка, громкость |
 | sfx/heal.wav | https://freesound.org/people/Rickplayer/sounds/530488/ | Rickplayer | CC0 1.0 | обрезка, громкость |

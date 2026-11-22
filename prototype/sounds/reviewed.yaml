@@ -60,6 +60,7 @@ sfx/goat_bleat: true
 sfx/goblin_cackle: true
 sfx/goose_honk: true
 sfx/griffin_screech: true
+sfx/gull: true
 sfx/gunshot: true
 sfx/heal: true
 sfx/heavy_hit: true
@@ -69,6 +70,7 @@ sfx/horse_gallop: true
 sfx/horse_snort: true
 sfx/ice: true
 sfx/insect_buzz: true
+sfx/laugh: true
 sfx/lightning: true
 sfx/lock_click: true
 sfx/lute: true

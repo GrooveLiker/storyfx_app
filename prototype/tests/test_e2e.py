@@ -171,6 +171,20 @@ def test_fairytale_scene_accuracy(scene_data, embedder):
     assert acc >= 0.75, "\n".join([f"точность {acc:.0%}"] + misses)
 
 
+def test_scene_accuracy_on_stories(embedder):
+    """Задача 25: доля фраз размеченных сказок (tests/scene_labels.yaml), где играет фон того места, где герой.
+    Текстом: 72% по ключевым словам и смыслу окна → 86% с классификатором сцены по фразе (2026-11-22);
+    контрольная сказка holdout_kuznets (размечена до прогона): 62% → 76%."""
+    import sys
+    sys.path.insert(0, str(TESTS.parent / "tools"))
+    import scene_eval
+    import story_run
+    res = scene_eval.evaluate(engine=lambda c, log: story_run.build(c, log, embedder=embedder))
+    acc = scene_eval.summary(res)
+    print(f"сцены на сказках: {acc:.0%}")
+    assert acc >= 0.84, {k: f"{v[0]}/{v[1]}" for k, v in res.items()}
+
+
 MOOD_CASES = {   # фразы не из описаний moods.yaml; почти без ключевых слов настроения
     "calm": ["солнце садилось, старик сидел на завалинке и смотрел на закат", "кот дремал на печке, бабушка вязала",
              "путники брели по тропинке, никуда не торопясь", "река медленно несла свои воды"],
@@ -293,3 +307,16 @@ def test_wav_through_vosk(actions, scene_data, scenarios, clock, embedder):
         transcripts.append(f"{name}: {' | '.join(finals)}")
         errors += check_expectations(name, sc, eng.events)
     assert not errors, "\n".join(errors + ["", "Распознано:"] + transcripts)
+
+
+def test_scene_by_phrase(scene_data, embedder):
+    """Задача 25: сцена по смыслу одной фразы — без ключевого слова; место «вдали» классификатор не переспорит."""
+    from storyfx.scenes import SceneTracker, load_scene_examples
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays), embedder=embedder, examples=load_scene_examples())
+    t.add_utterance("пошёл мельник к синему морю")
+    assert t.current == "sea"
+    t.add_utterance("воротился мельник к жене")
+    assert t.current == "home"
+    t.add_utterance("вдалеке пропали они за тёмным лесом")
+    assert t.current == "home"

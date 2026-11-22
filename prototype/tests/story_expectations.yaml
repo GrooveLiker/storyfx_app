@@ -31,6 +31,7 @@ stories:
     known_failing: []          # «с дубовыми вороты» — описание избы, исправлено примерами door._none (2026-11-16)
     known_failing_voice:
       - forbid:scene:battle     # Vosk: «у ворот» → «утру бою», «вольною» → «войною»
+      - forbid:scene:forest     # Vosk: «с травой морскою» → «с травой мерзкое» — классификатор сцены по фразе (задача 25) счёл лесом
 
   kolobok:
     expect:
@@ -61,6 +62,7 @@ stories:
       - expect:sfx:sleigh_bells  # Vosk: «в дровни» → «в дров в не»
 
   gusi:
+    limits: {scene: 55}   # смены верные — по разметке мест (tests/scene_labels.yaml); точность сцен меряет test_scene_accuracy_on_stories (задача 25)
     expect:
       char: [old_man, old_woman, goose, hedgehog, witch]
       leave: [goose]                      # «пропали за тёмным лесом», «улетели»
@@ -76,6 +78,7 @@ stories:
       - expect:char:old_man       # Vosk: «жили старик со старухой» → «жили историче икса старушка»
 
   owner_sea:
+    limits: {scene: 30}   # смены верные — по разметке мест (tests/scene_labels.yaml); точность сцен меряет test_scene_accuracy_on_stories (задача 25)
     expect:
       char: [old_man, old_woman, hen]
       scene: [sea]

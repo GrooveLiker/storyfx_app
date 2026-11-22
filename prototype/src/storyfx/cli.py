@@ -13,7 +13,7 @@ from .characters import CharacterTracker, load_characters
 from .mixer import SoundMixer
 from .muted import load_muted
 from .mood import load_moods, make_mood_tracker
-from .scenes import SceneTracker, load_scenes
+from .scenes import SceneTracker, load_scene_examples, load_scenes
 from .actions import ActionMatcher, load_actions
 from .speech import load_speech_cues
 
@@ -32,7 +32,8 @@ def build_engine(audio, use_embedder: bool = True, log=print, music: bool = True
     moods, default = load_moods()
     return StoryEngine(
         actions=ActionMatcher(load_actions(), embedder=embedder),
-        scenes=SceneTracker(scenes, overlays, embedder=embedder),
+        scenes=SceneTracker(scenes, overlays, embedder=embedder,
+                            examples=load_scene_examples() if embedder is not None else None),
         audio=audio,
         log=log,
         moods=make_mood_tracker(moods, default, embedder=embedder),
