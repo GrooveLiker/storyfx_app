@@ -73,7 +73,36 @@ MEANING_CASES = [
     ("разбойник бежал следом и махал топором", "fight", "sword_swing"),
     ("разбойник стреляет в него из лука", "arrow", "arrow"),
     ("старик медленно ведёт свою лошадку по дороге", "horse", "horse_snort"),
+    # живой тест 2026-11-22
+    ("дед запряг коня и отправился в город", "horse", "horse_gallop"),
+    ("над пристанью с криком кружили чайки", "birds", "gull"),
+    ("услышав шутку, все дружно засмеялись", "laugh", "laugh"),
 ]
+
+
+def test_event_split_by_pause(actions, clock, embedder):
+    """Живой тест 2026-11-22 (задача 27): пауза резала событие на фразы, и звук терялся.
+    «старый сундук | открыли и» — хвост с якорем переходит в следующую фразу;
+    «…лежал свиток эльфы | развернул его» — «без звука» не решаем раньше конца фразы."""
+    from storyfx.actions import ActionMatcher
+    m = ActionMatcher(list(actions), embedder=embedder, clock=clock)
+    fired = []
+    for i, text in enumerate(["в склепе друзья нашли", "старый сундук", "открыли и"]):
+        clock.advance(1.5)
+        fired += [d.sfx for d in m.process(text, i, final=True) if d.sfx]
+    assert "chest_open" in fired
+    fired = []
+    for text, final in [("в сундуке лежал свиток", False), ("в сундуке лежал свиток эльфы", False),
+                        ("в сундуке лежал свиток эльфы развернул", False),
+                        ("в сундуке лежал свиток эльфы развернул его", True)]:
+        clock.advance(0.7)                              # срок «без звука» давно прошёл
+        fired += [d.sfx for d in m.process(text, 10, final=final) if d.sfx]
+    assert "paper" in fired
+    # перенос — один раз и только скоро: через 10 с «открыли» — уже не про сундук
+    clock.advance(10)
+    m.process("старый сундук", 20, final=True)
+    clock.advance(10)
+    assert not [d for d in m.process("открыли окно", 21, final=True) if d.group == "chest"]
 
 
 def test_actions_by_meaning(actions, clock, embedder):

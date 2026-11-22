@@ -46,6 +46,15 @@ def test_live_log_keywords(mood_data):
     assert t2.current == "action"
 
 
+def test_graveyard_is_tense(mood_data):
+    """Живой тест 2026-11-22: после пляса в таверне пошли на кладбище — играла весёлая музыка."""
+    t = tracker(mood_data)
+    t.add_utterance("скрипач заиграл и все пустились в пляс")
+    assert t.current == "cheerful"
+    t.add_utterance("ночью друзья пошли на старое кладбище")
+    assert t.current == "tense"
+
+
 def test_escalation_skips_dwell(mood_data):
     """После смены настроения музыка стоит MOOD_MIN_DWELL фраз — но не когда напряжение растёт."""
     t = tracker(mood_data)

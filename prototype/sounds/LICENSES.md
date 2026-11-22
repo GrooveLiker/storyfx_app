@@ -69,6 +69,7 @@
 | sfx/goblin_cackle.wav | https://freesound.org/people/qubodup/sounds/857062/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/goose_honk.wav | https://freesound.org/people/SpaceJoe/sounds/510945/ | SpaceJoe | CC0 1.0 | обрезка, громкость |
 | sfx/griffin_screech.wav | https://freesound.org/people/GrayEpic/sounds/697363/ | GrayEpic | CC0 1.0 | обрезка, громкость |
+| sfx/gull.wav | https://freesound.org/people/Snapper4298/sounds/166703/ | Snapper4298 | CC0 1.0 | обрезка, громкость |
 | sfx/gunshot.wav | https://freesound.org/people/morganpurkis/sounds/370304/ | morganpurkis | CC0 1.0 | обрезка, громкость |
 | sfx/hare_hop.wav | https://freesound.org/people/alegemaate/sounds/364712/ | alegemaate | CC0 1.0 | обрезка, громкость |
 | sfx/heal.wav | https://freesound.org/people/Rickplayer/sounds/530488/ | Rickplayer | CC0 1.0 | обрезка, громкость |
@@ -79,6 +80,7 @@
 | sfx/horse_snort.wav | https://freesound.org/people/o_ciz/sounds/475483/ | o_ciz | CC0 1.0 | обрезка, громкость |
 | sfx/ice.wav | https://freesound.org/people/lotteria001/sounds/709888/ | lotteria001 | CC0 1.0 | обрезка, громкость |
 | sfx/insect_buzz.wav | https://freesound.org/people/bajko/sounds/328398/ | bajko | CC0 1.0 | обрезка, громкость |
+| sfx/laugh.wav | https://freesound.org/people/deleted_user_2104797/sounds/324894/ | deleted_user_2104797 | CC0 1.0 | обрезка, громкость |
 | sfx/lightning.wav | https://freesound.org/people/doudar41/sounds/535952/ | doudar41 | CC0 1.0 | обрезка, громкость |
 | sfx/lock_click.wav | https://freesound.org/people/IPaddeh/sounds/422852/ | IPaddeh | CC0 1.0 | обрезка, громкость |
 | sfx/lute.wav | https://freesound.org/people/FenrirFangs/sounds/234738/ | FenrirFangs | CC0 1.0 | обрезка, громкость |

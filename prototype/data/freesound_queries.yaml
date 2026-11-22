@@ -104,9 +104,11 @@ sfx:
   elf_chime:       {queries: ["magic sparkle chime", "fairy dust", "harp arpeggio", "elven magic", "magic shimmer", "harp glissando"], min: 0.5, max: 6, cut: 3.0}  # 2026-11-22
   dwarf_laugh:     {queries: ["man laughing", "laughing man", "man laughter", "hearty laugh", "laugh male", "big laugh", "pirate laugh", "jolly laugh"], min: 0.5, max: 5, cut: 2.5}  # 2026-11-22
   mug_clink:       {queries: ["beer mugs clink", "tankard", "mugs toast cheers", "ceramic mug clink", "beer glasses cheers", "glass clink"], min: 0.2, max: 5, cut: 2.0}  # 2026-11-22
-  lute:            {queries: ["lute", "lute music", "medieval guitar strum", "acoustic guitar strum chord"], min: 1, max: 15, cut: 4.0}
+  lute:            {queries: ["lute melody", "medieval lute", "lute music", "renaissance lute", "acoustic guitar fingerpicking", "guitar melody short"], min: 2, max: 20, cut: 4.0}   # живой тест 2026-11-22: один удар по струне не слышно
   fiddle:          {queries: ["violin melody", "violin folk", "violin playing", "violin tune", "solo violin", "fiddle tune"], min: 1, max: 15, cut: 4.0}   # скрипка: тема music (2026-11-22)
 
+  gull:            {queries: ["seagull", "seagulls", "gulls calling", "seagull cry"], min: 1, max: 15, cut: 3.5}   # 2026-11-22
+  laugh:           {queries: ["group laughing", "crowd laugh", "people laughing", "laughter group", "audience laugh"], min: 1, max: 15, cut: 3.0}   # 2026-11-22
 ambience:
   forest:  {queries: ["forest ambience birds", "forest ambience day", "woods birdsong ambience"], min: 30, max: 600, cut: 40}
   meadow:  {queries: ["meadow ambience summer", "field ambience birds insects", "countryside ambience"], min: 30, max: 600, cut: 40}

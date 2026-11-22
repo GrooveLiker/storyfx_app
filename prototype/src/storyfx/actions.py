@@ -139,6 +139,7 @@ class ActionMatcher:
     _last_fired: dict[str, float] = field(default_factory=dict)
     _clf: dict[str, object] = field(default_factory=dict)
     _first_seen: dict[tuple, float] = field(default_factory=dict)   # (ключ части, последний якорь) → когда услышали
+    _carry: dict[str, tuple[str, float]] = field(default_factory=dict)  # тема → (хвост прошлой фразы, когда она кончилась)
 
     def __post_init__(self):
         if self.embedder is not None:
@@ -168,11 +169,24 @@ class ActionMatcher:
         return clf.classes[i], float(p[i])
 
     def process(self, text: str, utterance_id: int, final: bool) -> list[Decision]:
-        tokens = tokenize(text)
-        clauses = split_clauses(tokens)
+        base = tokenize(text)
         decisions: list[Decision] = []
         now = self.clock()
+        carry_next: dict[str, tuple[str, float]] = {}
         for g in self.groups:
+            # Задача 27: пауза разрезала событие («старый сундук | открыли его») — хвост прошлой фразы
+            # с якорем, решённым без звука, становится началом этой (один раз, если фраза началась скоро).
+            carried = self._carry.get(g.id)
+            # своё слово темы в новой фразе — решаем её саму («…старый сундук. Варвар откинул крышку сундука»)
+            if carried and now - carried[1] <= config.ACTION_CARRY_S and not any(
+                    find_matches(p, base) for p in g.topic):
+                tokens = tokenize(carried[0] + " " + text)
+                n_carry = len(tokens) - len(base)
+            else:
+                tokens, n_carry = base, 0
+            if not tokens:
+                continue
+            clauses = split_clauses(tokens)
             # части фразы, где есть якорь этой темы: (начало, конец, якоря)
             anchored = []
             for start, end, _ in clauses:
@@ -235,7 +249,9 @@ class ActionMatcher:
                             if label == NONE:
                                 continue
                             need = max(need, config.ACTION_BARE_CONF)
-                        if (label == NONE and waited < config.ACTION_HARD_DEADLINE_S) or (label != NONE and conf < need):
+                        # «без звука» не спешим: тишина не опаздывает, а дальше может прийти смысл
+                        # («в сундуке лежал свиток, и эльф развернул его», живой тест 2026-11-22)
+                        if label == NONE or conf < need:
                             continue
                 self._seen.add(key)
                 # отрицание относится к якорю: «не зарычал», «дождя нет»; «орк упал и не встал» — звук нужен
@@ -248,6 +264,14 @@ class ActionMatcher:
                 if label is None:
                     label, conf = self.classify(g, ctx)
                 variant = next((v for v in g.variants if v.id == label), None)
+                silent = (label == NONE or variant is None or conf < config.ACTION_MIN_CONF
+                          or (len(ctx_tokens) <= len(anchors) and conf < config.ACTION_BARE_CONF))
+                if (silent and final and self.use_deadlines and k + 1 == len(anchored) and stop is None
+                        and anchors[0] >= n_carry and len(tokens) - 1 - anchors[-1] < config.CONTEXT_AFTER
+                        and len(tokens) - n_carry <= config.ACTION_CARRY_WORDS):
+                    # короткий обрывок кончился сразу за якорем — продолжение, возможно, в следующей
+                    # (длинная фраза — законченная мысль: «…а девка завыла» + «ну, что тут…» ≠ вой)
+                    carry_next[g.id] = (" ".join(t.word for t in tokens[lo:]), now)
                 if label == NONE or variant is None:
                     decisions.append(Decision(g.id, None, conf, ctx, "по смыслу без звука"))
                 elif conf < config.ACTION_MIN_CONF:
@@ -261,6 +285,7 @@ class ActionMatcher:
                     self._last_fired[label] = now
                     decisions.append(Decision(g.id, label, conf, ctx))
         if final:
+            self._carry = carry_next
             self._seen = {k for k in self._seen if k[0] != utterance_id}
             self._first_seen = {k: v for k, v in self._first_seen.items() if k[0] != utterance_id}
         return decisions

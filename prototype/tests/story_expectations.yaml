@@ -53,7 +53,7 @@ stories:
       char: [dog]                         # «старый пёс» — ругательство
       overlay_on: [storm]                 # «как гроза разразилась» — сравнение
     forbid_in:
-      - {words: "запряг", sfx: [horse_gallop]}           # запрячь — не скакать
+      - {words: "подвёл ко крыльцу", sfx: [horse_gallop]}   # запряг и стоит — не скакать («запряг и поехал» — копыта, живой тест 2026-11-22)
       - {words: "свалил", sfx: [fall]}                   # «деток свалил» в сани
     known_failing: []
     known_failing_voice:
@@ -125,9 +125,9 @@ stories:
       scene: [village, city, forest, cave, tavern, graveyard, sea, castle, home]
       overlay_on: [rain, night, storm]
       mood: [tense, cheerful, action]
-      sfx: [horse_snort, coins, lute, bell, wolf_howl, owl, thunder, roar, fall, arrow, fireball, heal, rockfall,
+      sfx: [coins, lute, bell, wolf_howl, owl, thunder, roar, fall, arrow, fireball, heal, rockfall,
             drink, fiddle, door_knock, door_creak, torch_light, sword_clash, chest_open, paper, lock_click,
-            splash, horse_gallop, magic, heavy_hit]
+            splash, horse_gallop, magic, heavy_hit, gull, laugh]   # запряг и поехал — копыта (живой тест 2026-11-22)
     forbid:
       sfx: [gunshot, sleigh_bells, chains]
       scene: [swamp, temple]
@@ -137,7 +137,4 @@ stories:
       - {words: "за рекой на кладбище", scene: [graveyard]}   # место вдали — ещё не там
       - {words: "бросились в атаку", sfx: [splash]}       # «бросил* в» — якорь воды, но тут атака
       - {words: "отпер замок", scene: [castle]}           # замок — запор, не крепость
-    known_failing:
-      - expect:sfx:paper        # «в сундуке лежал свиток, и эльф развернул его» — свиток назван местоимением, якоря нет
-    known_failing_voice:
-      - expect:sfx:paper        # (склейку предложений Vosk — 6 ошибок — убрала резка фраз по паузам, задача 26)
+    # свиток «эльф развернул его» — раньше молчал: «без звука» решалось до глагола (задача 27, 2026-11-22)
