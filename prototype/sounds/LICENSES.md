@@ -7,7 +7,7 @@
 | Файл | Источник | Автор | Лицензия | Изменения |
 |---|---|---|---|---|
 | ambience/battle.wav | https://freesound.org/people/craigsmith/sounds/675093/ | craigsmith | CC0 1.0 | обрезка, громкость, петля |
-| ambience/camp.wav | https://freesound.org/people/LizzBitzz/sounds/766127/ | LizzBitzz | CC0 1.0 | обрезка, громкость, петля |
+| ambience/camp.wav | https://freesound.org/people/Duophonic/sounds/248303/ | Duophonic | CC0 1.0 | обрезка, громкость, петля |
 | ambience/castle.wav | https://freesound.org/people/Quistard/sounds/174279/ | Quistard | CC0 1.0 | обрезка, громкость, петля |
 | ambience/cave.wav | https://freesound.org/people/Electroviolence/sounds/234554/ | Electroviolence | CC0 1.0 | обрезка, громкость, петля |
 | ambience/city.wav | https://freesound.org/people/nicoproson/sounds/648483/ | nicoproson | CC0 1.0 | обрезка, громкость, петля |
@@ -49,19 +49,20 @@
 | sfx/door_knock.wav | https://freesound.org/people/Valerie-Vivegnis/sounds/865362/ | Valerie-Vivegnis | CC0 1.0 | обрезка, громкость |
 | sfx/drink.wav | https://freesound.org/people/OwlStorm/sounds/320139/ | OwlStorm | CC0 1.0 | обрезка, громкость |
 | sfx/duck_quack.wav | https://freesound.org/people/DigPro120/sounds/558858/ | DigPro120 | CC0 1.0 | обрезка, громкость |
-| sfx/dwarf_laugh.wav | https://freesound.org/people/NinjaSharkStudios/sounds/649082/ | NinjaSharkStudios | CC0 1.0 | обрезка, громкость |
+| sfx/dwarf_laugh.wav | https://freesound.org/people/quavosh/sounds/670839/ | quavosh | CC0 1.0 | обрезка, громкость |
 | sfx/elemental_rumble.wav | https://freesound.org/people/prozaciswack/sounds/82722/ | prozaciswack | CC0 1.0 | обрезка, громкость |
 | sfx/elephant.wav | https://freesound.org/people/D.jones/sounds/527845/ | D.jones | CC0 1.0 | обрезка, громкость |
-| sfx/elf_chime.wav | https://freesound.org/people/PhonosUPF/sounds/490831/ | PhonosUPF | CC0 1.0 | обрезка, громкость |
+| sfx/elf_chime.wav | https://freesound.org/people/Qvantor/sounds/879797/ | Qvantor | CC0 1.0 | обрезка, громкость |
 | sfx/evil_laugh.wav | https://freesound.org/people/NinjaSharkStudios/sounds/646307/ | NinjaSharkStudios | CC0 1.0 | обрезка, громкость |
 | sfx/explosion.wav | https://freesound.org/people/Logicogonist/sounds/264031/ | Logicogonist | CC0 1.0 | обрезка, громкость |
 | sfx/fall.wav | https://freesound.org/people/leonelmail/sounds/504626/ | leonelmail | CC0 1.0 | обрезка, громкость |
 | sfx/fanfare.wav | https://freesound.org/people/plasterbrain/sounds/397355/ | plasterbrain | CC0 1.0 | обрезка, громкость |
+| sfx/fiddle.wav | https://freesound.org/people/owstu/sounds/508530/ | owstu | CC0 1.0 | обрезка, громкость |
 | sfx/fireball.wav | https://freesound.org/people/qubodup/sounds/171255/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/footsteps.wav | https://freesound.org/people/qubodup/sounds/816019/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/fox_yelp.wav | https://freesound.org/people/Setzilla/sounds/173208/ | Setzilla | CC0 1.0 | обрезка, громкость |
 | sfx/frog_croak.wav | https://freesound.org/people/katzlbt/sounds/361117/ | katzlbt | CC0 1.0 | обрезка, громкость |
-| sfx/frost_crackle.wav | https://freesound.org/people/egomassive/sounds/536807/ | egomassive | CC0 1.0 | обрезка, громкость |
+| sfx/frost_crackle.wav | https://freesound.org/people/kyles/sounds/452645/ | kyles | CC0 1.0 | обрезка, громкость |
 | sfx/ghost_moan.wav | https://freesound.org/people/SnowFightStudios/sounds/643741/ | SnowFightStudios | CC0 1.0 | обрезка, громкость |
 | sfx/giant_steps.wav | https://freesound.org/people/Beefmaster69/sounds/531725/ | Beefmaster69 | CC0 1.0 | обрезка, громкость |
 | sfx/goat_bleat.wav | https://freesound.org/people/Kinoton/sounds/581240/ | Kinoton | CC0 1.0 | обрезка, громкость |
@@ -85,7 +86,7 @@
 | sfx/magic_shield.wav | https://freesound.org/people/spookymodem/sounds/249818/ | spookymodem | CC0 1.0 | обрезка, громкость |
 | sfx/monkey.wav | своя запись: sounds/own/sfx__monkey.wav | владелец | своя | обрезка, громкость |
 | sfx/mouse_squeak.wav | https://freesound.org/people/AntumDeluge/sounds/188043/ | AntumDeluge | CC0 1.0 | обрезка, громкость |
-| sfx/mug_clink.wav | https://freesound.org/people/Dentrabert/sounds/673315/ | Dentrabert | CC0 1.0 | обрезка, громкость |
+| sfx/mug_clink.wav | https://freesound.org/people/BogumilaMerc/sounds/835819/ | BogumilaMerc | CC0 1.0 | обрезка, громкость |
 | sfx/necrotic.wav | https://freesound.org/people/qubodup/sounds/740776/ | qubodup | CC0 1.0 | обрезка, громкость |
 | sfx/ogre_growl.wav | https://freesound.org/people/TomRonaldmusic/sounds/607201/ | TomRonaldmusic | CC0 1.0 | обрезка, громкость |
 | sfx/old_man_grunt.wav | своя запись: sounds/own/sfx__old_man_grunt.wav | владелец | своя | обрезка, громкость |

@@ -1,9 +1,4 @@
 # Выключенные звуки: распознавание работает (видно в журнале), но звук не играет.
 # Ведётся кнопкой «Не нужен» / «Вернуть» в каталоге звуков (tools/catalog.py). Формат: kind/id.
 muted:
-- ambience/camp
-- sfx/dwarf_laugh
-- sfx/elf_chime
-- sfx/frost_crackle
 - sfx/hare_hop
-- sfx/mug_clink

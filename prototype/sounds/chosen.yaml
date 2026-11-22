@@ -6,10 +6,10 @@ ambience/battle:
   url: https://freesound.org/people/craigsmith/sounds/675093/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/camp:
-  id: 766127
-  name: Ambience_Campsite_Night
-  username: LizzBitzz
-  url: https://freesound.org/people/LizzBitzz/sounds/766127/
+  id: 248303
+  name: campfire in a forest at night.wav
+  username: Duophonic
+  url: https://freesound.org/people/Duophonic/sounds/248303/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 ambience/castle:
   id: 174279
@@ -259,10 +259,10 @@ sfx/duck_quack:
   url: https://freesound.org/people/DigPro120/sounds/558858/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/dwarf_laugh:
-  id: 649082
-  name: Man Laugh
-  username: NinjaSharkStudios
-  url: https://freesound.org/people/NinjaSharkStudios/sounds/649082/
+  id: 670839
+  name: Man's laugh
+  username: quavosh
+  url: https://freesound.org/people/quavosh/sounds/670839/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/elemental_rumble:
   id: 82722
@@ -277,10 +277,10 @@ sfx/elephant:
   url: https://freesound.org/people/D.jones/sounds/527845/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/elf_chime:
-  id: 490831
-  name: harp glissando
-  username: PhonosUPF
-  url: https://freesound.org/people/PhonosUPF/sounds/490831/
+  id: 879797
+  name: Shine Chime
+  username: Qvantor
+  url: https://freesound.org/people/Qvantor/sounds/879797/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/evil_laugh:
   id: 646307
@@ -305,6 +305,12 @@ sfx/fanfare:
   name: Tada Fanfare A
   username: plasterbrain
   url: https://freesound.org/people/plasterbrain/sounds/397355/
+  license: http://creativecommons.org/publicdomain/zero/1.0/
+sfx/fiddle:
+  id: 508530
+  name: el violin melody 3.wav
+  username: owstu
+  url: https://freesound.org/people/owstu/sounds/508530/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/fireball:
   id: 171255
@@ -331,10 +337,10 @@ sfx/frog_croak:
   url: https://freesound.org/people/katzlbt/sounds/361117/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/frost_crackle:
-  id: 536807
-  name: Ice.ogg
-  username: egomassive
-  url: https://freesound.org/people/egomassive/sounds/536807/
+  id: 452645
+  name: ice grinding cracking freezing designed.wav
+  username: kyles
+  url: https://freesound.org/people/kyles/sounds/452645/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/ghost_moan:
   id: 643741
@@ -475,10 +481,10 @@ sfx/mouse_squeak:
   url: https://freesound.org/people/AntumDeluge/sounds/188043/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/mug_clink:
-  id: 673315
-  name: Glass Clink.wav
-  username: Dentrabert
-  url: https://freesound.org/people/Dentrabert/sounds/673315/
+  id: 835819
+  name: mugs-clinking
+  username: BogumilaMerc
+  url: https://freesound.org/people/BogumilaMerc/sounds/835819/
   license: http://creativecommons.org/publicdomain/zero/1.0/
 sfx/necrotic:
   id: 740776

@@ -31,7 +31,7 @@ sfx:
   thunder:      {queries: ["thunder clap", "thunder rumble", "thunder strike"], min: 1, max: 12, cut: 5.0}
   gunshot:      {queries: ["rifle gunshot", "shotgun shot", "gunshot single", "musket shot"], min: 0.3, max: 6, cut: 2.5}
   sleigh_bells: {queries: ["carriage", "sleigh", "clatter of hooves"], min: 1, max: 20, cut: 4.0}
-  frost_crackle: {queries: ["ice crackle", "ice cracking", "frozen lake crack", "ice creak"], min: 0.5, max: 15, cut: 3.0}
+  frost_crackle: {queries: ["ice cracking", "ice crack freeze", "freezing ice spell", "ice creaking", "frozen lake crack", "ice crackle"], min: 0.5, max: 15, cut: 3.0}  # 2026-11-22: прежние выключены владельцем
 
   # --- голоса персонажей при появлении (data/characters.yaml, docs/characters.md) ---
   bear_growl:     {queries: ["bear growl", "bear roar", "grizzly growl"], min: 0.5, max: 8, cut: 2.5}
@@ -101,10 +101,11 @@ sfx:
   elemental_rumble: {queries: ["earth rumble", "ground rumble", "earthquake rumble", "stone golem"], min: 1, max: 10, cut: 3.5}
   slime_squelch:   {queries: ["slime squelch", "goo squish", "slimy creature"], min: 0.2, max: 4, cut: 2.0}
   griffin_screech: {queries: ["eagle screech", "griffin screech", "hawk scream"], min: 0.3, max: 5, cut: 2.5}
-  elf_chime:       {queries: ["harp glissando", "fairy chime", "magical harp"], min: 0.5, max: 6, cut: 3.0}
-  dwarf_laugh:     {queries: ["man hearty laugh", "deep laugh man", "jolly laugh"], min: 0.5, max: 5, cut: 2.5}
-  mug_clink:       {queries: ["glasses clink cheers", "beer glass toast", "glass clink", "cups clink"], min: 0.2, max: 5, cut: 2.0}
+  elf_chime:       {queries: ["magic sparkle chime", "fairy dust", "harp arpeggio", "elven magic", "magic shimmer", "harp glissando"], min: 0.5, max: 6, cut: 3.0}  # 2026-11-22
+  dwarf_laugh:     {queries: ["man laughing", "laughing man", "man laughter", "hearty laugh", "laugh male", "big laugh", "pirate laugh", "jolly laugh"], min: 0.5, max: 5, cut: 2.5}  # 2026-11-22
+  mug_clink:       {queries: ["beer mugs clink", "tankard", "mugs toast cheers", "ceramic mug clink", "beer glasses cheers", "glass clink"], min: 0.2, max: 5, cut: 2.0}  # 2026-11-22
   lute:            {queries: ["lute", "lute music", "medieval guitar strum", "acoustic guitar strum chord"], min: 1, max: 15, cut: 4.0}
+  fiddle:          {queries: ["violin melody", "violin folk", "violin playing", "violin tune", "solo violin", "fiddle tune"], min: 1, max: 15, cut: 4.0}   # скрипка: тема music (2026-11-22)
 
 ambience:
   forest:  {queries: ["forest ambience birds", "forest ambience day", "woods birdsong ambience"], min: 30, max: 600, cut: 40}
@@ -129,4 +130,4 @@ ambience:
   # --- ДнД (задача 24) ---
   temple:     {queries: ["church bells"], min: 30, max: 600, cut: 40}
   graveyard:  {queries: ["graveyard ambience night", "cemetery ambience", "spooky night wind crows"], min: 30, max: 600, cut: 40}
-  camp:       {queries: ["campfire night ambience", "campfire crickets", "camping fire ambience"], min: 30, max: 600, cut: 40}
+  camp:       {queries: ["campfire night crickets", "campfire forest night", "bonfire night ambience", "camp fire outdoor", "campfire crickets"], min: 30, max: 600, cut: 40}  # 2026-11-22
