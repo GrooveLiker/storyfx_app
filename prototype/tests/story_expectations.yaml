@@ -165,3 +165,49 @@ stories:
     known_failing: []             # 8 ошибок первого прогона исправлены (задача 28, 2026-11-23)
     known_failing_voice:
       - expect:char:crow          # Vosk: «закаркал ворон» → «за каркнул ворен»
+
+  holdout_yunga:                          # 2026-11-23: контрольная №3, ожидания записаны ДО первого прогона
+    # юнга: портовый город — трактир — море и буря — остров — пещера с кладом — дворец — деревня — изба
+    limits: {scene: 25, mood: 40}
+    expect:
+      char: [bat, bear, king]
+      leave: [bear]                       # «медведь испугался огня и убежал»
+      scene: [city, tavern, sea, forest, cave, castle, village, home]
+      overlay_on: [storm, snow]
+      mood: [tense, cheerful]
+      sfx: [drink, paper, gull, thunder, splash, torch_light, trap_click, rockfall, chest_open, roar, coins, laugh, bird]
+    forbid:
+      sfx: [gunshot, sleigh_bells, wolf_howl, sword_clash]
+    forbid_in:
+      - {words: "болтал,? что", scene: [cave]}               # пересказ моряка — ещё трактир
+      - {words: "сбил ржавый замок", scene: [castle]}         # замок сундука, не дворец
+      - {words: "рассказывал про море", scene: [sea], overlay_on: [storm]}   # рассказ у печки — героя там нет
+      - {words: "не пострадал", sfx: [scream, fall]}          # отпрыгнул и цел
+      # ниже — дописаны после первого прогона: ошибки, найденные глазами в отчёте (2026-11-23)
+      - {words: "замахнулся", sfx: [torch_light]}             # факелом машут, не зажигают
+      - {words: "из темноты вышел", scene: [forest]}          # медведь в пещере — классификатор сцены: лес
+      - {words: "за окном", scene: [forest]}                  # снег за окном избы — классификатор сцены: лес
+    known_failing:                # ошибки первого прогона (2026-11-23), PROGRESS.md — задача 29
+      - expect:sfx:drink          # «пили ром и стучали кружками» — без звука: «пили», «ром» — не якоря темы, а «стучали кружками» — по смыслу без звука
+      - expect:sfx:trap_click     # «под ногами что-то щёлкнуло, и сверху посыпались камни» — ни щелчка,
+      - expect:sfx:rockfall       #   ни камнепада
+      - expect:sfx:chest_open     # «сбил замок и открыл крышку» — сундук назван фразой раньше, звука сундука нет
+      - expect:sfx:roar           # «раздалось рычание» — вой волка
+      - expect:sfx:bird           # «кричали попугаи» — без птицы
+      - forbid:sfx:wolf_howl      #   (то же рычание)
+      - forbid_in:1               # «сбил ржавый замок камнем» — фон дворца
+      - forbid_in:4               # «схватил факел и замахнулся» — звук зажигания
+      - forbid_in:5
+      - forbid_in:6
+    known_failing_voice:
+      - expect:sfx:drink
+      - expect:sfx:trap_click
+      - expect:sfx:rockfall
+      - expect:sfx:chest_open
+      - expect:sfx:roar
+      - expect:sfx:bird
+      - forbid:sfx:wolf_howl
+      - forbid_in:1
+      - forbid_in:4
+      - forbid_in:5
+      - forbid_in:6
