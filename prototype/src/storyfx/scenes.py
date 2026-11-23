@@ -102,6 +102,12 @@ def _not_a_place(tokens, start: int, end: int) -> bool:
 
 
 @lru_cache(maxsize=1)
+def _close_scenes() -> frozenset[frozenset[str]]:
+    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
+    return frozenset(frozenset((a, b)) for g in raw.get("close_scenes", []) for a in g for b in g if a != b)
+
+
+@lru_cache(maxsize=1)
 def _via_words() -> frozenset[str]:
     raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
     return frozenset(raw.get("via_words", []))
@@ -130,9 +136,20 @@ def _is_far(tokens, start: int) -> bool:
     return any(t.word in _far_words() for t in tokens[max(0, start - 2): start])
 
 
-def _has_place(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
-    """Как _has_match, но место вдали («за лесом») не считается: сцену меняет только то, где герой."""
+def _far_chain(tokens, end: int, others: tuple[Pattern, ...]) -> bool:
+    """«цветок растёт на болоте за рекой» — место, сразу за которым «за <другое место>», тоже вдали.
+    Только если после «за» — место другой сцены: «сидит в избе за столом» — изба (контрольная №2, 2026-11-23)."""
+    if end + 1 >= len(tokens) or tokens[end + 1].word not in _far_words():
+        return False
+    return any(end + 2 <= m.start <= end + 3 for p in others for m in find_matches(p, tokens))
+
+
+def _has_place(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset(),
+               others: tuple[Pattern, ...] = ()) -> bool:
+    """Как _has_match, но место вдали («за лесом») не считается: сцену меняет только то, где герой.
+    others — ключевые слова остальных сцен (для «на болоте за рекой»)."""
     return any(_real(tokens, m) and m.start not in skip and not _is_far(tokens, m.start)
+               and not _far_chain(tokens, m.end, others)
                and not _is_reported(tokens, m.start)
                and not _not_a_place(tokens, m.start, m.end)
                for p in patterns for m in find_matches(p, tokens))
@@ -201,7 +218,9 @@ class SceneTracker:
         self._since_switch += 1
         changes = self._update_overlays(tokens, spoken)
         # Явное ключевое слово сцены в последней фразе — сменить сразу («вошли в таверну»).
-        explicit = [s for s in self.scenes if _has_place(s.keywords, tokens, spoken)]
+        explicit = [s for s in self.scenes
+                    if _has_place(s.keywords, tokens, spoken,
+                                  tuple(p for o in self.scenes if o.id != s.id for p in o.keywords))]
         via = [s for s in explicit if _is_via(s.keywords, tokens)]
         if via and len(explicit) > 1:
             explicit = via          # «домой через лес» — герой в лесу
@@ -235,6 +254,10 @@ class SceneTracker:
         self.last_phrase = (label, conf)
         if (label == NONE or label == self.current or conf < config.SCENE_CLF_CONF
                 or conf - second < config.SCENE_CLF_MARGIN):
+            return None
+        # близкие места (река и море: лодка, вёсла, берег) по одной фразе не различить — меняет только слово места:
+        # «паромщик перевёз на лодке» у реки — река (контрольная №2, 2026-11-23)
+        if frozenset((label, self.current)) in _close_scenes():
             return None
         self._set(label, keep=len(narration))
         return Change("scene", label, f"по фразе ({conf:.2f})")

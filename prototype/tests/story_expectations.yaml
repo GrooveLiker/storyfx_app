@@ -62,7 +62,9 @@ stories:
       - expect:sfx:sleigh_bells  # Vosk: «в дровни» → «в дров в не»
 
   gusi:
-    limits: {scene: 55}   # смены верные — по разметке мест (tests/scene_labels.yaml); точность сцен меряет test_scene_accuracy_on_stories (задача 25)
+    # настроение 80: 5 смен, все по делу — дурная слава гусей (tense), «к счастью, попался ёж» (calm), избушка Яги (tense),
+    # погоня (action), «гуси увидели — да за ней» (tense); спокойная передышка появилась с примером прогулки (задача 28, 2026-11-23)
+    limits: {scene: 55, mood: 80}   # смены верные — по разметке мест (tests/scene_labels.yaml); точность сцен меряет test_scene_accuracy_on_stories (задача 25)
     expect:
       char: [old_man, old_woman, goose, hedgehog, witch]
       leave: [goose]                      # «пропали за тёмным лесом», «улетели»
@@ -160,21 +162,6 @@ stories:
       - {words: "хранят старые книги", sfx: [paper]}     # пересказ, книги не листают
       - {words: "горели свечи", sfx: [torch_light]}      # свечи уже горят — не зажигают
       - {words: "по тропинке", mood: [tense]}            # спокойная прогулка через луг
-    known_failing:                # ошибки первого прогона (2026-11-23), PROGRESS.md — «Контрольная №2»
-      - expect:sfx:splash         # «вёсла плескали по воде», «провалилась в трясину» — без всплеска
-      - expect:sfx:horse_gallop   # «купила коня и поскакала домой» — фыркание, копыта съел кулдаун
-      - expect:sfx:bird           # «в небе пел жаворонок» — без птицы
-      - forbid_in:0               # «на болоте за рекой» — болото включилось (far_words смотрят только вперёд)
-      - forbid_in:2               # «паромщик… на лодке, вёсла» — классификатор сцены: море (0.53) поверх реки
-      - forbid_in:3               # «хранят старые книги» — шорох бумаги
-      - forbid_in:4               # «горели свечи» — звук зажигания факела
-      - forbid_in:5               # «пошла по тропинке через луг» — настроение tense
+    known_failing: []             # 8 ошибок первого прогона исправлены (задача 28, 2026-11-23)
     known_failing_voice:
       - expect:char:crow          # Vosk: «закаркал ворон» → «за каркнул ворен»
-      - expect:sfx:splash
-      - expect:sfx:bird
-      - forbid_in:0
-      - forbid_in:2
-      - forbid_in:3
-      - forbid_in:4
-      - forbid_in:5
