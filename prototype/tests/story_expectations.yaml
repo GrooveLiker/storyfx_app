@@ -141,3 +141,40 @@ stories:
       - {words: "бросились в атаку", sfx: [splash]}       # «бросил* в» — якорь воды, но тут атака
       - {words: "отпер замок", scene: [castle]}           # замок — запор, не крепость
     # свиток «эльф развернул его» — раньше молчал: «без звука» решалось до глагола (задача 27, 2026-11-22)
+
+  holdout_travnitsa:                      # 2026-11-23: контрольная №2, ожидания записаны ДО первого прогона
+    # травница идёт за цветком: деревня — луг — река — болото — ночёвка — поле боя — город — храм — изба
+    limits: {scene: 25, mood: 40}
+    expect:
+      char: [cow, rooster, frog, crow, wolf, dog, horse, old_woman]
+      scene: [village, meadow, river, swamp, city, temple, home]
+      overlay_on: [fire, night]
+      sfx: [splash, wolf_howl, coins, bell, horse_gallop, drink, laugh, paper, bird]
+    forbid:
+      sfx: [gunshot, sword_clash, fiddle, lute, scream]
+    forbid_in:
+      - {words: "на болоте за рекой", scene: [swamp, river]}   # место вдали — ещё деревня
+      - {words: "в городе есть храм", scene: [city, temple]}   # пересказ воина
+      # ниже — дописаны после первого прогона: ошибки, найденные глазами в отчёте (2026-11-23)
+      - {words: "паромщик", scene: [sea]}                # лодка на реке — не море
+      - {words: "хранят старые книги", sfx: [paper]}     # пересказ, книги не листают
+      - {words: "горели свечи", sfx: [torch_light]}      # свечи уже горят — не зажигают
+      - {words: "по тропинке", mood: [tense]}            # спокойная прогулка через луг
+    known_failing:                # ошибки первого прогона (2026-11-23), PROGRESS.md — «Контрольная №2»
+      - expect:sfx:splash         # «вёсла плескали по воде», «провалилась в трясину» — без всплеска
+      - expect:sfx:horse_gallop   # «купила коня и поскакала домой» — фыркание, копыта съел кулдаун
+      - expect:sfx:bird           # «в небе пел жаворонок» — без птицы
+      - forbid_in:0               # «на болоте за рекой» — болото включилось (far_words смотрят только вперёд)
+      - forbid_in:2               # «паромщик… на лодке, вёсла» — классификатор сцены: море (0.53) поверх реки
+      - forbid_in:3               # «хранят старые книги» — шорох бумаги
+      - forbid_in:4               # «горели свечи» — звук зажигания факела
+      - forbid_in:5               # «пошла по тропинке через луг» — настроение tense
+    known_failing_voice:
+      - expect:char:crow          # Vosk: «закаркал ворон» → «за каркнул ворен»
+      - expect:sfx:splash
+      - expect:sfx:bird
+      - forbid_in:0
+      - forbid_in:2
+      - forbid_in:3
+      - forbid_in:4
+      - forbid_in:5
