@@ -190,3 +190,42 @@ stories:
     known_failing: []             # 7 ошибок первого прогона исправлены (задача 29, 2026-11-23)
     known_failing_voice:
       - expect:sfx:torch_light    # Vosk: «и зажёг факел» → «не зажёг факел» — отрицание
+  holdout_egor:                           # 2026-11-25: контрольная №4, ожидания записаны ДО первого прогона (docs/review-2026-11-25.md)
+    # пастух Егор: деревня — река — луг под дождём — лес — болото с волком — изба; дождь гаснет сам (D-019)
+    limits: {scene: 30, mood: 100}
+    expect:
+      char: [dog, cow, frog, owl, wolf, old_woman]
+      leave: [cow, wolf]                    # «корова пропала», «волк… скрылся в чаще»
+      scene: [village, river, meadow, forest, swamp, home]
+      overlay_on: [rain]
+      mood: [tense]                         # волк на болоте
+      sfx: [footsteps, drink]               # «побежали искать», «пили чай»
+    forbid:
+      sfx: [gunshot, sword_clash, fanfare]  # нет стрельбы, боя и царя
+    forbid_in:
+      - {words: "моросил", mood: [action, tense]}                                       # дождь утром — спокойное начало
+      - {words: "рассказывал", char: [wolf], scene: [swamp], mood: [tense, action]}     # пересказ у печки
+      - {words: "приговаривала", scene: [swamp]}                                        # пересказ: «болото — дурное место»
+      - {words: "скрылся в чаще", scene: [forest]}                                      # куда ушёл волк, не где герой
+      - {words: "искать её в лес", scene: [forest]}                                     # место назначения: герой ещё на лугу (D-019)
+      - {words: "вели к болоту", scene: [swamp]}                                        # место назначения: герой на опушке
+      - {words: "копытца", sfx: [horse_snort]}                                          # копытца коровы, не лошади
+      - {words: "дождь всё шёл", sfx: [footsteps]}                                      # «шёл» дождя — не шаги
+    known_failing:
+      - forbid_in:0                         # «моросил дождь» → action по смыслу (1.01), держался до ф.11
+      - forbid_in:1                         # пересказ про волка: волк появляется снова (reported не действует на персонажей)
+      - forbid_in:2                         # «приговаривала» не в reported_words — swamp включился
+      - forbid_in:3                         # «скрылся в чаще» → forest, хотя герой на болоте
+      - forbid_in:4                         # «в лес» раньше времени — открытый кейс D-019
+      - forbid_in:6                         # «копытца» → фырканье лошади (0.43)
+      - forbid_in:7                         # «дождь всё шёл» → шаги (0.68)
+      - limit:scene                         # 11 смен вместо ~7 по смыслу
+      - limit:mood                          # лишние смены: action на ф.3
+    known_failing_voice:
+      - expect:scene:meadow                 # Vosk: «на лугу… под старую иву» → «налогу… его» — forest по фразе
+      - forbid:sfx:gunshot                  # Vosk: «на опушке» → «на пушки» → выстрел
+      - forbid_in:1                         # пересказ про волка: волк появляется снова (как в тексте)
+      - forbid_in:2                         # «приговаривала» → swamp (как в тексте)
+      - forbid_in:3                         # «скрылся в чаще» → forest (как в тексте)
+      - limit:scene                         # + forest на ф.6 от ошибки слуха
+      - limit:mood                          # action на ф.2 («гнал коров» по ключу) и tense на ф.4 («жуткую» от слуха)
