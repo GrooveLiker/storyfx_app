@@ -32,6 +32,7 @@ def make_mood_tracker(moods: list[Scene], default: str, embedder=None) -> SceneT
     t = SceneTracker(list(moods), [], embedder=embedder,
                      threshold=config.MOOD_THRESHOLD, margin=config.MOOD_MARGIN, confirm=config.MOOD_CONFIRM,
                      min_words=config.SCENE_MIN_WORDS, min_dwell=config.MOOD_MIN_DWELL,
-                     intensity=config.MOOD_INTENSITY)   # напряжение растёт — без выдержки
+                     intensity=config.MOOD_INTENSITY,   # напряжение растёт — без выдержки
+                     context_gate=True)                 # D-019: «поле, где вчера шла битва» ≠ динамичная музыка
     t.current = default
     return t

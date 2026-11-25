@@ -39,6 +39,7 @@ class Scene:
     ambience: str
     descriptions: list[str]
     keywords: list[Pattern]
+    indoor: bool = False            # закрытое место (пещера, изба…): уличная погода там затихает быстрее (D-019)
     centroid: np.ndarray | None = None
 
 
@@ -48,18 +49,20 @@ class Overlay:
     ambience: str
     keywords: list[Pattern]
     stop: list[Pattern]
+    decay: int | None = None        # D-019: фраз без упоминания — слой затихает сам (None — только stop)
+    indoor_decay: int | None = None # в закрытом месте — быстрее (None — как decay)
 
 
 def load_scenes(path: Path = config.DATA_DIR / "scenes.yaml") -> tuple[list[Scene], list[Overlay]]:
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     scenes = [
         Scene(sid, s["ambience"], list(s.get("descriptions", [])),
-              [parse_pattern(k) for k in s.get("keywords", [])])
+              [parse_pattern(k) for k in s.get("keywords", [])], bool(s.get("indoor", False)))
         for sid, s in raw["scenes"].items()
     ]
     overlays = [
         Overlay(oid, o["ambience"], [parse_pattern(k) for k in o.get("keywords", [])],
-                [parse_pattern(k) for k in o.get("stop", [])])
+                [parse_pattern(k) for k in o.get("stop", [])], o.get("decay"), o.get("indoor_decay"))
         for oid, o in raw.get("overlays", {}).items()
     ]
     return scenes, overlays
@@ -125,10 +128,18 @@ def _reported_words() -> tuple[Pattern, ...]:
     return tuple(parse_pattern(w) for w in raw.get("reported_words", []))
 
 
+@lru_cache(maxsize=1)
+def _reported_connectors() -> frozenset[str]:
+    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
+    return frozenset(raw.get("reported_connectors", ["что"]))
+
+
 def _is_reported(tokens, start: int) -> bool:
-    """«стражник рассказал, что на кладбище…» — место из пересказа: перед ним «рассказал … что»."""
+    """«стражник рассказал, что на кладбище…», «Петька рассказывал про море и бурю» — пересказ:
+    после «<слово> … что/про/как» место и погода — о чём говорят, а не где герой."""
     say = [m.start for p in _reported_words() for m in find_matches(p, tokens[:start])]
-    return any(t.word == "что" for i in say for t in tokens[i + 1: start])
+    links = _reported_connectors()
+    return any(t.word in links for i in say for t in tokens[i + 1: start])
 
 
 def _is_far(tokens, start: int) -> bool:
@@ -158,6 +169,13 @@ def _has_place(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset
 def _has_match(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
     """skip — номера слов в репликах героев: «Печка, печка, скажи…» не переносит рассказ в избу."""
     return any(_real(tokens, m) and m.start not in skip for p in patterns for m in find_matches(p, tokens))
+
+
+def _has_weather(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
+    """Как _has_match, но погода из пересказа не действует: «рассказывал про море и бурю» —
+    бури у героя нет (контрольная №3; без этого затухшая буря включалась снова на рассказе у печки)."""
+    return any(_real(tokens, m) and m.start not in skip and not _is_reported(tokens, m.start)
+               for p in patterns for m in find_matches(p, tokens))
 
 
 @dataclass
@@ -190,6 +208,17 @@ class SceneTracker:
     _candidate: str | None = None
     _candidate_hits: int = 0
     _since_switch: int = 10**6                   # фраз с последней смены
+    _phrase_count: int = 0                       # сколько финальных фраз прошло (отсчёт затухания слоёв)
+    _overlay_since: dict[str, int] = field(default_factory=dict)  # слой → фраза последнего упоминания
+    # Медленный контекст рассказа (D-019): сглаженный вектор последних фраз. Смене, которой он
+    # противоречит, не верим сразу — откладываем. Включено только для настроения (context_gate):
+    # замер 2026-11-25 — rubert-tiny2 не отличает «поскакала домой» от «вошла в избу» (местам фильтр
+    # мешает: откладывает и настоящие переходы, scene_eval 91% → 71%), а настроение отличает:
+    # «поле, где вчера шла битва» фразой к action не ближе, чем к calm, а «ворвался разбойник» — ближе.
+    context_gate: bool = False
+    _slow: np.ndarray | None = None
+    _phrase_vec: np.ndarray | None = None
+    _pending: tuple[str, int] | None = None      # (отложенная сцена, до какой фразы ждём подтверждения)
     last_scores: dict[str, float] = field(default_factory=dict)
     last_phrase: tuple[str, float] | None = None
 
@@ -216,7 +245,19 @@ class SceneTracker:
         narration = [t.word for i, t in enumerate(tokens) if i not in spoken]
         self._words = (self._words + narration)[-config.SCENE_WINDOW_WORDS:]
         self._since_switch += 1
+        self._phrase_count += 1
+        self._update_context(narration)
         changes = self._update_overlays(tokens, spoken)
+        # Отложенная смена (D-019): ждала, что рассказ подтвердит новое место
+        if self._pending:
+            pid, until = self._pending
+            if self._phrase_count > until:
+                self._pending = None                       # не подтвердилось — это был не переход
+            elif self._context_supports(pid):
+                self._pending = None
+                self._set(pid, keep=len(narration))
+                changes.append(Change("scene", pid, "контекст подтвердил отложенное"))
+                return changes
         # Явное ключевое слово сцены в последней фразе — сменить сразу («вошли в таверну»).
         explicit = [s for s in self.scenes
                     if _has_place(s.keywords, tokens, spoken,
@@ -228,8 +269,9 @@ class SceneTracker:
             vec = self._embed(" ".join(self._words))
             best = max(explicit, key=lambda s: self._score(s, vec, tokens))
             if best.id != self.current:
-                self._set(best.id, keep=len(narration))  # новое место названо в этой фразе — помним только её
-                changes.append(Change("scene", best.id, "ключевое слово"))
+                c = self._propose(best.id, keep=len(narration), reason="ключевое слово")
+                if c:                                   # новое место названо в этой фразе — помним только её
+                    changes.append(c)
                 return changes
         # место названо, но правила решили «не здесь» («пропали за тёмным лесом», «рассказал, что на кладбище…») —
         # классификатор их не переспорит
@@ -259,8 +301,7 @@ class SceneTracker:
         # «паромщик перевёз на лодке» у реки — река (контрольная №2, 2026-11-23)
         if frozenset((label, self.current)) in _close_scenes():
             return None
-        self._set(label, keep=len(narration))
-        return Change("scene", label, f"по фразе ({conf:.2f})")
+        return self._propose(label, keep=len(narration), reason=f"по фразе ({conf:.2f})")
 
     def evaluate(self, extra_text: str = "") -> Change | None:
         """Оценка по смыслу всего окна (с гистерезисом). Можно вызывать с текущим частичным текстом."""
@@ -292,6 +333,58 @@ class SceneTracker:
         return None
 
     # ---------- внутреннее ----------
+    def _update_context(self, narration: list[str]) -> None:
+        """Медленный контекст (D-019): EMA векторов последних фраз. Нужен только при context_gate."""
+        if not self.context_gate or self.embedder is None or not narration:
+            return
+        v = self._embed(" ".join(narration))
+        self._phrase_vec = v
+        a = config.CONTEXT_SLOW_ALPHA
+        self._slow = v if self._slow is None else (1 - a) * self._slow + a * v
+        self._slow = self._slow / (np.linalg.norm(self._slow) + 1e-9)
+
+    def _context_supports(self, target: str) -> bool:
+        """Медленный контекст не против нового настроения: оно не дальше от него, чем текущее."""
+        if self._slow is None or self.current is None:
+            return True
+        s = next((x for x in self.scenes if x.id == target), None)
+        c = next((x for x in self.scenes if x.id == self.current), None)
+        if s is None or c is None or s.centroid is None or c.centroid is None:
+            return True
+        return float(self._slow @ s.centroid) >= float(self._slow @ c.centroid) - config.CONTEXT_CONTRADICT
+
+    def _phrase_prefers(self, target: str) -> bool:
+        """Сама фраза ближе к новому настроению, чем к текущему («ворвался разбойник» — да,
+        «поле, где вчера шла битва» — нет; замер на rubert-tiny2 2026-11-25)."""
+        p = self._phrase_vec
+        if p is None or self.current is None:
+            return False
+        s = next((x for x in self.scenes if x.id == target), None)
+        c = next((x for x in self.scenes if x.id == self.current), None)
+        if s is None or c is None or s.centroid is None or c.centroid is None:
+            return False
+        return float(p @ s.centroid) > float(p @ c.centroid)
+
+    def _propose(self, scene_id: str, keep: int, reason: str) -> Change | None:
+        """Смена места/настроения. Без фильтра (context_gate выключен — сцены) — сразу.
+        С фильтром (настроение): сразу, если фраза сама ближе к новому или контекст не против;
+        иначе откладываем на CONTEXT_PENDING_PHRASES фраз (D-019): подтвердится — переключимся,
+        нет — это был не поворот («где вчера шла битва» на спокойной прогулке)."""
+        if scene_id == self.current:
+            return None
+        if not self.context_gate or self._slow is None:
+            self._set(scene_id, keep=keep)
+            return Change("scene", scene_id, reason)
+        if self._pending and self._pending[0] == scene_id:
+            self._pending = None
+            self._set(scene_id, keep=keep)
+            return Change("scene", scene_id, reason + " (подтверждено)")
+        if self._phrase_prefers(scene_id) or self._context_supports(scene_id):
+            self._set(scene_id, keep=keep)
+            return Change("scene", scene_id, reason)
+        self._pending = (scene_id, self._phrase_count + config.CONTEXT_PENDING_PHRASES)
+        return None
+
     def _escalates(self, target: str) -> bool:
         if not self.intensity or self.current is None:
             return False
@@ -300,6 +393,7 @@ class SceneTracker:
     def _set(self, scene_id: str, keep: int | None = None) -> None:
         self.current = scene_id
         self._candidate, self._candidate_hits = None, 0
+        self._pending = None
         self._since_switch = 0
         # Перешли в новое место — слова о прежнем месте больше не голосуют (иначе «…в деревне… пошли в лес…»
         # возвращало деревню: её ключевое слово ещё в окне). D-011. Место названо в фразе — оставляем только её
@@ -317,19 +411,48 @@ class SceneTracker:
         kw = sum(1 for p in scene.keywords for m in find_matches(p, tokens) if _real(tokens, m))
         return sim + min(kw, 3) * config.KEYWORD_BONUS
 
+    def _indoor(self) -> bool:
+        """Герой в закрытом месте (пещера, изба, храм…) — уличная погода там затихает быстрее (D-019)."""
+        s = next((s for s in self.scenes if s.id == self.current), None)
+        return bool(s and s.indoor)
+
+    def _lifetime(self, o: Overlay) -> int | None:
+        """Сколько фраз слой живёт без упоминания; None — не затухает (ночь — до «утра»)."""
+        if o.decay is None:
+            return None
+        if self._indoor() and o.indoor_decay is not None:
+            return o.indoor_decay
+        return o.decay
+
+    def _overlay_off(self, o: Overlay, reason: str) -> Change:
+        self.active_overlays.remove(o.id)
+        self._overlay_since.pop(o.id, None)
+        return Change("overlay_off", o.id, reason)
+
     def _update_overlays(self, tokens, spoken: frozenset[int] = frozenset()) -> list[Change]:
+        """Слои погоды — затухающая активация (D-019): упоминание подзаряжает слой, без подкрепления
+        он затихает сам за `decay` фраз (в закрытом месте — за `indoor_decay`), стоп-фраза гасит сразу.
+        Стоп-фраз подо все концовки не придумать — сказок миллион; контекст решает сам."""
         changes = []
         for o in self.overlays:
-            if o.id in self.active_overlays and _has_match(o.stop, tokens, spoken):
-                self.active_overlays.remove(o.id)
-                changes.append(Change("overlay_off", o.id, "стоп-фраза"))
-            elif (o.id not in self.active_overlays and _has_match(o.keywords, tokens, spoken)
-                  and not _has_match(o.stop, tokens, spoken)):
+            mentioned = _has_weather(o.keywords, tokens, spoken)
+            stopped = _has_weather(o.stop, tokens, spoken)
+            if o.id in self.active_overlays:
+                if stopped:
+                    changes.append(self._overlay_off(o, "стоп-фраза"))
+                elif mentioned:
+                    self._overlay_since[o.id] = self._phrase_count    # снова назвали — отсчёт заново
+                else:
+                    life = self._lifetime(o)
+                    if life is not None and self._phrase_count - self._overlay_since[o.id] >= life:
+                        changes.append(self._overlay_off(o, f"затихло: {life} фраз без упоминания"))
+            elif mentioned and not stopped:
+                self._overlay_since[o.id] = self._phrase_count
                 self.active_overlays.append(o.id)
                 changes.append(Change("overlay_on", o.id, "ключевое слово"))
                 while len(self.active_overlays) > config.MAX_OVERLAYS:
-                    old = self.active_overlays.pop(0)
-                    changes.append(Change("overlay_off", old, "вытеснено новым"))
+                    old = next(x for x in self.overlays if x.id == self.active_overlays[0])
+                    changes.append(self._overlay_off(old, "вытеснено новым"))
         return changes
 
     def ambience_for(self, scene_id: str | None) -> str | None:

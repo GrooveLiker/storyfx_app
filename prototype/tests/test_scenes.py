@@ -185,3 +185,91 @@ def test_reported_place_does_not_switch(scene_data):
     t.add_utterance("мы сидели в таверне")
     t.add_utterance("стражник рассказал что за рекой на кладбище бродят мертвецы")
     assert t.current == "tavern"
+
+
+# ---------- D-019 (задача 30): погода — затухающая активация, а не стоп-фразы ----------
+def test_weather_fades_without_mentions(scene_data):
+    """Стоп-фраза не нужна: без новых упоминаний дождь затихает сам (буря в «юнге»)."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("начался сильный дождь")
+    assert "rain" in t.active_overlays
+    changes = []
+    for _ in range(8):                                   # rain: decay 8
+        changes += t.add_utterance("герои шли и разговаривали о своём")
+    assert "rain" not in t.active_overlays
+    assert ("overlay_off", "rain") in kinds(changes)
+
+
+def test_weather_recharge_on_mention(scene_data):
+    """Снова назвали дождь — отсчёт заново: ливень не затихает посреди самого себя."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("начался сильный дождь")
+    for _ in range(7):                                   # 7 фраз без упоминания — ещё звучит
+        t.add_utterance("герои шли молча")
+    assert "rain" in t.active_overlays
+    t.add_utterance("а дождь всё лил и лил")             # подзарядка
+    for _ in range(7):
+        t.add_utterance("герои шли молча")
+    assert "rain" in t.active_overlays
+    t.add_utterance("герои шли молча")                   # 8-я фраза без упоминания — затих
+    assert "rain" not in t.active_overlays
+
+
+def test_weather_fades_faster_indoors(scene_data):
+    """Спустились в пещеру — буря снаружи затихает почти сразу (indoor_decay)."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("на море началась страшная буря")
+    for _ in range(6):
+        t.add_utterance("корабль бросало на волнах")     # бурю не называют, но на море она звучит
+    assert "storm" in t.active_overlays
+    t.add_utterance("герои спустились в глубокую пещеру")  # cave — закрытое место
+    t.add_utterance("вокруг были только камни и темнота")
+    assert "storm" not in t.active_overlays
+
+
+def test_reported_weather_does_not_turn_on(scene_data):
+    """«Петька рассказывал про море и бурю» — пересказ: бури у героя нет (контрольная №3).
+    Без этого затихшая к концу сказки буря включалась снова на рассказе у печки."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("вечером они сидели у печки")
+    changes = t.add_utterance("петька рассказывал про море и бурю")
+    assert "storm" not in t.active_overlays
+    assert ("overlay_on", "storm") not in kinds(changes)
+    assert t.current != "sea"                            # и место из пересказа — тоже не наше
+
+
+def test_reported_stop_does_not_end_weather(scene_data):
+    """«Рассказал, что у них дождь кончился» — пересказ, наш дождь не гасит."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("начался сильный дождь")
+    t.add_utterance("старик рассказал что у них дождь закончился")
+    assert "rain" in t.active_overlays
+
+
+def test_night_does_not_decay(scene_data):
+    """Ночь — время суток, не погода: живёт до «утра», молчание её не гасит."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("наступила ночь")
+    for _ in range(20):
+        t.add_utterance("герои шли и разговаривали о своём")
+    assert "night" in t.active_overlays
+    t.add_utterance("наконец наступило утро")
+    assert "night" not in t.active_overlays
+
+
+def test_scene_switch_stays_immediate(scene_data):
+    """Сцены — без фильтра контекста (замер 2026-11-25: rubert-tiny2 не отличает «поскакала домой»
+    от «вошла в избу», фильтр откладывал и настоящие переходы). Ключевое слово места — сразу,
+    даже если медленный контекст про другое место."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays), embedder=KeywordishEmbedder())
+    t.add_utterance("отряд вошёл в густой лес")
+    t.add_utterance("кругом деревья и птицы, лес шумит")
+    changes = t.add_utterance("а потом вышли к морю")
+    assert ("scene", "sea") in kinds(changes) and t.current == "sea"

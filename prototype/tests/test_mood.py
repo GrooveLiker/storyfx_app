@@ -109,3 +109,74 @@ def test_text_mode_toggle_command(actions, scene_data, mood_data, clock):
     out = list(with_music_toggle(["жили-были", "!музыка", "дед и баба", "!MUSIC"], eng))
     assert out == ["жили-были", "дед и баба"]
     assert eng.music_on and ("music", None) in eng.audio.log
+
+
+# ---------- D-019 (задача 30): фильтр контекста — прошедшее событие не меняет музыку ----------
+import numpy as np                                                      # noqa: E402
+
+from storyfx import config                                              # noqa: E402
+from storyfx.scenes import Scene, SceneTracker                          # noqa: E402
+from storyfx.textnorm import parse_pattern                              # noqa: E402
+
+
+class MoodVecEmbedder:
+    """Фейковый смысл: вектор = мешок слов. Проверяет механику фильтра (фраза за/против + контекст);
+    что rubert-tiny2 и правда различает «вчерашнюю битву» от «ворвался разбойник» — сквозные тесты.
+    «мирн» — спокойное слово НЕ из ключевых: фраза про битву в спокойном изложении ближе к calm."""
+    VOCAB = ["спокойн", "мирн", "страх", "битв", "ворвал"]
+
+    def encode(self, texts):
+        out = []
+        for t in texts:
+            v = np.array([t.lower().count(w) for w in self.VOCAB], dtype=float) + 0.01
+            out.append(v / np.linalg.norm(v))
+        return np.array(out)
+
+
+def gated_tracker():
+    """Трекер настроения с фильтром контекста (context_gate=True), как make_mood_tracker."""
+    moods = [
+        Scene("calm", "calm", ["спокойно и мирно"], [parse_pattern("спокойн*")]),
+        Scene("tense", "tense", ["страх и ужас"],
+              [parse_pattern("страх*"), parse_pattern("ворвал*"), parse_pattern("битв*")]),
+    ]
+    t = SceneTracker(moods, [], embedder=MoodVecEmbedder(), context_gate=True)
+    t.current = "calm"
+    return t
+
+
+def test_mood_past_event_deferred_and_expires():
+    """«…мирно мимо поля, где вчера шла битва» — слово «битва» есть, но фраза спокойная и контекст
+    спокойный: музыку не дергаем. За CONTEXT_PENDING_PHRASES подтверждения нет — забыли (D-019)."""
+    t = gated_tracker()
+    t.add_utterance("было спокойно и мирно")
+    t.add_utterance("спокойно шли дальше")
+    t.add_utterance("мирно мимо поля где вчера шла битва")     # слово есть, поворота нет
+    assert t.current == "calm"
+    for _ in range(config.CONTEXT_PENDING_PHRASES + 1):
+        t.add_utterance("спокойно и мирно шли дальше")
+    assert t.current == "calm"
+    t.add_utterance("снова мирно мимо поля битвы")             # новое упоминание — снова только отложено
+    assert t.current == "calm"
+
+
+def test_mood_turn_confirmed_by_repeat():
+    """Отложенное настроение, которое назвали снова, — настоящий поворот: переключаемся."""
+    t = gated_tracker()
+    t.add_utterance("было спокойно и мирно")
+    t.add_utterance("спокойно шли дальше")
+    t.add_utterance("мирно мимо поля где вчера шла битва")     # отложено
+    assert t.current == "calm"
+    changes = t.add_utterance("и вдруг ворвался страх")        # повтор темы — подтверждение
+    assert t.current == "tense"
+    assert changes and "подтверждено" in changes[0].reason
+
+
+def test_mood_switch_now_when_phrase_prefers():
+    """Сама фраза — про новое настроение («ворвался разбойник»): контекст ещё спокойный,
+    но переключаемся сразу — музыка не должна отставать (живой тест 2026-11-17)."""
+    t = gated_tracker()
+    t.add_utterance("было спокойно и мирно")
+    t.add_utterance("спокойно шли дальше")
+    t.add_utterance("вдруг страх ворвался в лагерь")           # фраза сама тревожная
+    assert t.current == "tense"
