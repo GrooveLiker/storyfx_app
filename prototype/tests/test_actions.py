@@ -45,6 +45,29 @@ def test_two_events_same_topic(actions, clock):
     assert len(ds) == 2
 
 
+def test_repeated_anchor_is_the_same_event(actions, clock):
+    """«Дождь всё шёл и шёл» — повтор того же якоря в той же фразе — то же событие: первое «шёл»
+    решено «без звука» (дождь не ходит), повтор молчит — его окно узкое, без подлежащего
+    (контрольная №4, 2026-11-25: «шёл и жучка тряхнула» давал шаги)."""
+    m = matcher(actions, clock)
+    ds = m.process("дождь всё шёл и шёл, и собака тряхнула мокрой шерстью", 0, final=True)
+    assert "footsteps" not in sounds(ds)
+    # контроль: настоящая ходьба звучит, и повтор «шли» ей не мешает
+    m2 = matcher(actions, clock)
+    assert "footsteps" in sounds(m2.process("они шли и шли по каменным плитам", 0, final=True))
+
+
+def test_listened_how_is_not_simile(actions, clock):
+    """«Слушали, как трещат дрова в печи» — «как» после глагола восприятия не сравнение;
+    звука мороза всё равно нет: треск дров — не треск мороза (примеры _none, контрольная №4)."""
+    m = matcher(actions, clock)
+    ds = m.process("слушали, как трещат дрова в печи", 0, final=True)
+    assert "frost_crackle" not in sounds(ds)
+    assert not any(d.note == "сравнение" for d in ds)            # решено по смыслу, не отмахнулись
+    m2 = matcher(actions, clock)
+    assert "frost_crackle" in sounds(m2.process("мороз пуще затрещал", 0, final=True))
+
+
 def test_context_crosses_conjunction(actions, clock):
     m = matcher(actions, clock)
     d = [d for d in m.process("девочка подошла к лошадке и ласково погладила", 0, final=True) if d.group == "horse"]

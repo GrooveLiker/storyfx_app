@@ -251,6 +251,16 @@ def test_reported_stop_does_not_end_weather(scene_data):
     assert "rain" in t.active_overlays
 
 
+def test_reported_place_other_verb(scene_data):
+    """«Бабушка приговаривала, что болото — дурное место» — пересказ без «рассказал»:
+    герой в избе, а не на болоте (контрольная №4, 2026-11-25)."""
+    scenes, overlays = scene_data
+    t = SceneTracker(list(scenes), list(overlays))
+    t.add_utterance("дома бабушка растопила печь")
+    t.add_utterance("бабушка качала головой и приговаривала что болото дурное место")
+    assert t.current == "home"
+
+
 def test_night_does_not_decay(scene_data):
     """Ночь — время суток, не погода: живёт до «утра», молчание её не гасит."""
     scenes, overlays = scene_data

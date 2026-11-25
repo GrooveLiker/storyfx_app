@@ -46,6 +46,17 @@ def test_live_log_keywords(mood_data):
     assert t2.current == "action"
 
 
+def test_herding_is_not_a_chase(mood_data):
+    """«Гнал коров на луг» — не погоня: стемминг стирает «-ся», поэтому в action — «=гнался»
+    точным словом (контрольная №4, 2026-11-25: «гнал коров» + «моросил дождь» включали боевик)."""
+    t = tracker(mood_data)
+    t.add_utterance("каждое утро он гнал коров на луг за рекой")
+    t.add_utterance("однажды с самого утра моросил холодный дождь")
+    assert t.current == "calm"
+    t.add_utterance("вор выскочил из кустов и гнался за ним по пятам")   # контроль: настоящая погоня
+    assert t.current == "action"
+
+
 def test_graveyard_is_tense(mood_data):
     """Живой тест 2026-11-22: после пляса в таверне пошли на кладбище — играла весёлая музыка."""
     t = tracker(mood_data)

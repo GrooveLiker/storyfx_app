@@ -4,6 +4,7 @@
 «появился» — если его не было на сцене (впервые, ушёл — «заяц убежал», или о нём молчали
 CHARACTER_REINTRO_PHRASES фраз). Отрицание («медведя не было») и сравнение («как медведь») — не упоминание.
 Обращение («ты, старый пёс») — не появление. После предлога («я у дедушки ушёл») — не тот, кто уходит.
+Пересказ («рассказывал, как встретил волка») — не появление: о персонаже говорят, его нет на сцене.
 Пересечения имён: длинное имя важнее («дед мороз» — мороз, не дед).
 """
 from __future__ import annotations
@@ -16,7 +17,7 @@ import yaml
 
 from . import config
 from .actions import split_clauses
-from .textnorm import Pattern, find_matches, is_comparison, is_negated, parse_pattern, tokenize
+from .textnorm import Pattern, find_matches, is_comparison, is_negated, is_reported, parse_pattern, tokenize
 from .world import Mention, WorldState
 
 
@@ -115,8 +116,8 @@ class CharacterTracker:
                     continue                 # слово уже занято более длинным именем
                 taken |= span
                 if is_negated(tokens, m.start, end=m.end) or _absent_after(tokens, m.end) \
-                        or is_comparison(tokens, m.start):
-                    continue                 # «медведя не было», «сильный, как медведь»
+                        or is_comparison(tokens, m.start) or is_reported(tokens, m.start):
+                    continue                 # «медведя не было», «сильный, как медведь», «рассказывал про волка»
                 new = Mention(ch, tokens[m.start].word, m.start,
                               obj=m.start > 0 and tokens[m.start - 1].word in config.OBJECT_PREPOSITIONS,
                               address=_is_address(tokens, m.start))

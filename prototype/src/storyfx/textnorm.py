@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 import snowballstemmer
+import yaml
 
 from . import config
 
@@ -142,8 +143,11 @@ def find_matches(pattern: Pattern, tokens: list[Token], max_gap: int = config.MA
 
 
 def is_comparison(tokens: list[Token], start: int) -> bool:
-    """«как гроза», «словно медведь» — сравнение: ни погоды, ни места, ни персонажа на самом деле нет."""
-    return start > 0 and tokens[start - 1].word in config.SIMILE_WORDS
+    """«как гроза», «словно медведь» — сравнение: ни погоды, ни места, ни персонажа на самом деле нет.
+    Но «слушали, как трещат дрова» — придаточное после глагола восприятия, дрова трещат на самом деле."""
+    if start == 0 or tokens[start - 1].word not in config.SIMILE_WORDS:
+        return False
+    return not (start >= 2 and tokens[start - 2].stem.startswith(config.SIMILE_PERCEPTION))
 
 
 def is_negated(tokens: list[Token], start: int, window: int = config.NEGATION_WINDOW,
@@ -153,3 +157,23 @@ def is_negated(tokens: list[Token], start: int, window: int = config.NEGATION_WI
         return True
     after = [t.word for t in tokens[(end if end is not None else start) + 1:][:2]]
     return after[:1] == ["нет"] or (after[:1] == ["не"] and len(after) > 1 and after[1].startswith("был"))
+
+
+@lru_cache(maxsize=1)
+def _reported_words() -> tuple[Pattern, ...]:
+    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
+    return tuple(parse_pattern(w) for w in raw.get("reported_words", []))
+
+
+@lru_cache(maxsize=1)
+def _reported_connectors() -> frozenset[str]:
+    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
+    return frozenset(raw.get("reported_connectors", ["что"]))
+
+
+def is_reported(tokens: list[Token], start: int) -> bool:
+    """«стражник рассказал, что на кладбище…», «Петька рассказывал про море и бурю» — пересказ:
+    после «<слово> … что/про/как» место, погода и персонаж — о чём говорят, а не кто и где на сцене."""
+    say = [m.start for p in _reported_words() for m in find_matches(p, tokens[:start])]
+    links = _reported_connectors()
+    return any(t.word in links for i in say for t in tokens[i + 1: start])

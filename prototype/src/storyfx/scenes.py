@@ -10,7 +10,7 @@ import numpy as np
 import yaml
 
 from . import config
-from .textnorm import Pattern, find_matches, is_comparison, is_negated, parse_pattern, tokenize
+from .textnorm import Pattern, find_matches, is_comparison, is_negated, is_reported, parse_pattern, tokenize
 
 
 class Embedder(Protocol):
@@ -122,26 +122,6 @@ def _is_via(patterns: list[Pattern], tokens) -> bool:
                for p in patterns for m in find_matches(p, tokens))
 
 
-@lru_cache(maxsize=1)
-def _reported_words() -> tuple[Pattern, ...]:
-    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
-    return tuple(parse_pattern(w) for w in raw.get("reported_words", []))
-
-
-@lru_cache(maxsize=1)
-def _reported_connectors() -> frozenset[str]:
-    raw = yaml.safe_load((config.DATA_DIR / "scenes.yaml").read_text(encoding="utf-8"))
-    return frozenset(raw.get("reported_connectors", ["что"]))
-
-
-def _is_reported(tokens, start: int) -> bool:
-    """«стражник рассказал, что на кладбище…», «Петька рассказывал про море и бурю» — пересказ:
-    после «<слово> … что/про/как» место и погода — о чём говорят, а не где герой."""
-    say = [m.start for p in _reported_words() for m in find_matches(p, tokens[:start])]
-    links = _reported_connectors()
-    return any(t.word in links for i in say for t in tokens[i + 1: start])
-
-
 def _is_far(tokens, start: int) -> bool:
     """«пропали за тёмным лесом», «вдалеке за рекой» — место вдали, не то, где герой."""
     return any(t.word in _far_words() for t in tokens[max(0, start - 2): start])
@@ -161,7 +141,7 @@ def _has_place(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset
     others — ключевые слова остальных сцен (для «на болоте за рекой»)."""
     return any(_real(tokens, m) and m.start not in skip and not _is_far(tokens, m.start)
                and not _far_chain(tokens, m.end, others)
-               and not _is_reported(tokens, m.start)
+               and not is_reported(tokens, m.start)
                and not _not_a_place(tokens, m.start, m.end)
                for p in patterns for m in find_matches(p, tokens))
 
@@ -174,7 +154,7 @@ def _has_match(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset
 def _has_weather(patterns: list[Pattern], tokens, skip: frozenset[int] = frozenset()) -> bool:
     """Как _has_match, но погода из пересказа не действует: «рассказывал про море и бурю» —
     бури у героя нет (контрольная №3; без этого затухшая буря включалась снова на рассказе у печки)."""
-    return any(_real(tokens, m) and m.start not in skip and not _is_reported(tokens, m.start)
+    return any(_real(tokens, m) and m.start not in skip and not is_reported(tokens, m.start)
                for p in patterns for m in find_matches(p, tokens))
 
 
@@ -408,7 +388,10 @@ class SceneTracker:
         sim = 0.0
         if vec is not None and scene.centroid is not None:
             sim = float(vec @ scene.centroid)
-        kw = sum(1 for p in scene.keywords for m in find_matches(p, tokens) if _real(tokens, m))
+        # голосует слово, а не шаблон: «гнал» под три формы «гнался/гналась/гнались» — один голос,
+        # не три (контрольная №4, 2026-11-25: иначе одно слово давало максимальный бонус)
+        kw = len({i for p in scene.keywords for m in find_matches(p, tokens) if _real(tokens, m)
+                  for i in range(m.start, m.end + 1)})
         return sim + min(kw, 3) * config.KEYWORD_BONUS
 
     def _indoor(self) -> bool:

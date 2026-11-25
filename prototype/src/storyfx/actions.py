@@ -136,6 +136,7 @@ class ActionMatcher:
     clock: Callable[[], float] = time.monotonic
     use_deadlines: bool = True          # речь: решать не позже ~1 с (D-011). Набор текста: False — по смыслу, не по секундомеру
     _seen: set[tuple] = field(default_factory=set)    # (фраза, тема, слово-якорь, его номер в фразе)
+    _silent: set[tuple] = field(default_factory=set)  # (фраза, тема, слово-якорь), решённое «по смыслу без звука»
     _last_fired: dict[str, float] = field(default_factory=dict)
     _clf: dict[str, object] = field(default_factory=dict)
     _first_seen: dict[tuple, float] = field(default_factory=dict)   # (ключ части, последний якорь) → когда услышали
@@ -200,6 +201,16 @@ class ActionMatcher:
                 aw = tokens[anchors[0]].word
                 key = (utterance_id, g.id, aw, sum(1 for t in tokens[:anchors[0]] if t.word == aw))
                 if key in self._seen:
+                    continue
+                # «дождь всё шёл и шёл» — повтор того же слова-якоря в той же фразе — то же событие:
+                # если первое вхождение уже решено «по смыслу без звука» (дождь не ходит), повтор
+                # не звучит — его окно узкое («шёл и жучка…»), без подлежащего (контрольная №4, 2026-11-25).
+                if (utterance_id, g.id, aw) in self._silent:
+                    self._seen.add(key)
+                    rep = tokens[max(start, anchors[0] - config.CONTEXT_BEFORE):
+                                 min(len(tokens) - 1, anchors[-1] + config.CONTEXT_AFTER) + 1]
+                    decisions.append(Decision(g.id, None, 1.0, " ".join(t.word for t in rep),
+                                              "повтор слова — то же событие"))
                     continue
                 # Контекст после якоря может перейти через союз («подошла к лошадке и погладила её»),
                 # но не заходит в следующую часть с якорем той же темы — это уже другое событие.
@@ -273,6 +284,7 @@ class ActionMatcher:
                     # (длинная фраза — законченная мысль: «…а девка завыла» + «ну, что тут…» ≠ вой)
                     carry_next[g.id] = (" ".join(t.word for t in tokens[lo:]), now)
                 if label == NONE or variant is None:
+                    self._silent.add((utterance_id, g.id, aw))
                     decisions.append(Decision(g.id, None, conf, ctx, "по смыслу без звука"))
                 elif conf < config.ACTION_MIN_CONF:
                     decisions.append(Decision(g.id, None, conf, ctx, f"не уверен ({label})"))
@@ -287,5 +299,6 @@ class ActionMatcher:
         if final:
             self._carry = carry_next
             self._seen = {k for k in self._seen if k[0] != utterance_id}
+            self._silent = {k for k in self._silent if k[0] != utterance_id}
             self._first_seen = {k: v for k, v in self._first_seen.items() if k[0] != utterance_id}
         return decisions
