@@ -6,7 +6,7 @@ DATA_DIR = ROOT / "data"
 SOUNDS_DIR = ROOT / "sounds"
 MODELS_DIR = ROOT / "models"
 
-VOSK_MODEL_DIR = MODELS_DIR / "vosk-model-small-ru-0.22"
+VOSK_MODEL_DIR = MODELS_DIR / "vosk-model-small-ru-0.22"   # стенд для отладки «после слуха» (D-018); качество слуха решается на телефоне системным распознавателем, большая модель отвергнута (D-020)
 EMBED_MODEL_NAME = "cointegrated/rubert-tiny2"
 HF_CACHE_DIR = MODELS_DIR / "hf"
 

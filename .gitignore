@@ -10,3 +10,15 @@ __pycache__/
 *.egg-info/
 prototype/.freesound_key
 prototype/sounds/candidates/
+live_state.json
+mobile/**/build/
+mobile/**/.gradle/
+mobile/**/local.properties
+mobile/**/.dart_tool/
+mobile/**/.flutter-plugins
+mobile/**/.flutter-plugins-dependencies
+mobile/**/*.apk
+mobile/**/.android-build/
+
+# звуки приложения — те же файлы, что prototype/sounds (не в git)
+mobile/storyfx/assets/sounds/
