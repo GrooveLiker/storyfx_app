@@ -52,6 +52,10 @@ class MainActivity : FlutterActivity() {
                     }
                     "stop" -> { stopSession(); result.success(true) }
                     "info" -> result.success(deviceInfo())
+                    "exportLog" -> {
+                        val text = call.argument<String>("text").orEmpty()
+                        result.success(exportLog(text))
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -215,6 +219,37 @@ class MainActivity : FlutterActivity() {
         SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "LANGUAGE_UNAVAILABLE"
         SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT -> "CANNOT_CHECK_SUPPORT"
         else -> "#$code"
+    }
+
+    // ---------- экспорт журнала в Загрузки (как в asr_check) ----------
+
+    private fun exportLog(text: String): String {
+        val name = "storyfx_" + java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US)
+            .format(java.util.Date()) + ".log"
+        return try {
+            if (Build.VERSION.SDK_INT >= 29) {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name)
+                    put(android.provider.MediaStore.Downloads.MIME_TYPE, "text/plain")
+                    put(android.provider.MediaStore.Downloads.RELATIVE_PATH,
+                        android.os.Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = contentResolver.insert(
+                    android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: error("MediaStore вернул null")
+                contentResolver.openOutputStream(uri)!!.use {
+                    it.write(text.toByteArray(Charsets.UTF_8))
+                }
+                "Загрузки/$name"
+            } else {
+                val dir = getExternalFilesDir(android.os.Environment.DIRECTORY_DOCUMENTS)
+                val f = java.io.File(dir, name)
+                f.writeText(text)
+                f.absolutePath
+            }
+        } catch (e: Exception) {
+            "ОШИБКА экспорта: ${e.message}"
+        }
     }
 
     // ---------- разрешение на микрофон ----------
